@@ -1,6 +1,10 @@
 # Program to control passerelle between Android application
 # and micro-controller through USB tty
-
+import time
+import argparse
+import signal
+import sys
+import socket
 import socketserver
 import serial
 import threading
@@ -33,7 +37,7 @@ class ThreadedUDPServer(socketserver.ThreadingMixIn, socketserver.UDPServer):
 
 
 # send serial message 
-SERIALPORT = "COM3"
+SERIALPORT = "/dev/ttyUSB0"
 BAUDRATE = 115200
 ser = serial.Serial()
 
