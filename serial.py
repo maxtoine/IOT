@@ -47,3 +47,21 @@ class Serial(serial.Serial()):
         '''
         self.write(msg)
         print("UART Envoyé: <{msg}>".format(msg=msg))
+    
+    def readUARTMessage(self, weft_size):
+        '''
+        Lit un message de la connexion série.
+        
+        Retourne :
+        - str : Le message lu brut
+        '''
+       try:         
+            while self.isOpen() : 
+
+                if (self.inWaiting() >= weft_size): # if incoming bytes are waiting 
+                    return self.read(weft_size)
+                          
+        except (KeyboardInterrupt, SystemExit):
+            print("\nArrêt de la connexion série...")
+            self.close()
+            exit()
