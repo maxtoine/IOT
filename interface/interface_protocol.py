@@ -2,14 +2,12 @@ from core.model import Model
 
 class InterfaceProtocol:
     
-    def __init__(self):
-        pass
-
     def decode(self, data) -> Model:
-        raise NotImplementedError("decode method must be implemented by subclasses")
+        raise NotImplementedError()
 
     def encode(self, data: Model) -> bytes:
-        raise NotImplementedError("encode method must be implemented by subclasses")
-    
-    def size(self) -> int:
-        raise NotImplementedError("size method must be implemented by subclasses")
+        raise NotImplementedError()
+        
+    def read_from_port(self, serial_port) -> Model:
+        """Le protocole pioche dans le port série à sa manière"""
+        raise NotImplementedError()

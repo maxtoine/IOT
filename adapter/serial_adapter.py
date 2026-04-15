@@ -50,24 +50,24 @@ class SerialAdapter(serial.Serial):
         self.write(msg_bytes)
         print("UART Envoyé: <{msg}>".format(msg=msg))
     
-    def readUARTMessage(self, weft_size):
+    def readUARTMessage(self):
         '''
-        Lit un message de la connexion série.
-        
-        Retourne :
-        - str : Le message lu brut
+        Laisse le protocole gérer sa propre lecture.
         '''
         try:         
-            while self.isOpen() : 
-
-                if (self.inWaiting() >= self.protocol.size()):
-                    msg = self.read(self.protocol.size())
-                    return self.protocol.decode(msg)
+            while self.isOpen(): 
+                # MAGIE DE L'OOP : On donne "nous-même" (le port série) au protocole
+                model = self.protocol.read_from_port(self)
+                
+                if model:
+                    return model
                 
         except (KeyboardInterrupt, SystemExit):
             print("\nArrêt de la connexion série...")
             self.close()
             exit()
+            
+        return None
     
     def closeConnection(self):
         '''

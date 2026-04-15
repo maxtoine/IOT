@@ -16,6 +16,4 @@ class ServerConfig:
             serial_port=os.getenv('SERIAL_PORT', cls.serial_port),
             baudrate=int(os.getenv('BAUDRATE', cls.baudrate)),
             storage_path=os.getenv('STORAGE_PATH', cls.storage_path),
-            udp_host=os.getenv('UDP_HOST', cls.udp_host),
-            udp_port=int(os.getenv('UDP_PORT', cls.udp_port)),
         )

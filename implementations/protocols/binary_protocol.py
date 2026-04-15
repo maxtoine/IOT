@@ -35,35 +35,11 @@ class BinaryProtocol(InterfaceProtocol):
             end=trame.fin
         )
 
-    def size(self) -> int:
-        return ctypes.sizeof(MaTrame)
-
-
-class TextProtocol(InterfaceProtocol):
-    def encode(self, data: Model) -> bytes:
-        values = [
-            str(data.adress),
-            data.formats,
-            str(data.data_1),
-            str(data.data_2),
-            str(data.data_3),
-            str(data.end),
-        ]
-        return ";".join(values).encode("utf-8")
-
-    def decode(self, data: bytes) -> Model:
-        text = data.decode("utf-8") if isinstance(data, (bytes, bytearray)) else str(data)
-        parts = [part.strip() for part in text.split(";")]
-        if len(parts) != 6:
-            raise ValueError("TextProtocol attend 6 champs séparés par ';'.")
-        return Model(
-            adress=parts[0],
-            formats=parts[1],
-            data_1=float(parts[2]),
-            data_2=float(parts[3]),
-            data_3=float(parts[4]),
-            end=float(parts[5]),
-        )
-
-    def size(self) -> int:
-        return 0
+    
+    def read_from_port(self, serial_port) -> Model:
+        # Le binaire lit exactement 17 octets
+        taille = ctypes.sizeof(MaTrame)
+        if serial_port.in_waiting >= taille:
+            msg = serial_port.read(taille)
+            return self.decode(msg)
+        return None
