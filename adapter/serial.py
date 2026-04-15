@@ -12,9 +12,10 @@ class Serial(serial.Serial()):
     - sendUARTMessage(msg) : Envoie un message sur la connexion
     
     '''
-    def __init__(self, port, baudrate):
-        self.super().__init__()
-        self._initUART(port, baudrate) 
+    def __init__(self, port, baudrate, protocol):
+        super().__init__()
+        self._initUART(port, baudrate)
+        self.protocol = protocol
         
     def _initUART(self, serialport, baudrate):
         '''
@@ -45,7 +46,8 @@ class Serial(serial.Serial()):
         Envoie un message sur la connexion série a faire l'encodage avants
         Paramètre : msg (str) - Le message à envoyer
         '''
-        self.write(msg)
+        msg_bytes = self.protocol.encode(msg)
+        self.write(msg_bytes)
         print("UART Envoyé: <{msg}>".format(msg=msg))
     
     def readUARTMessage(self, weft_size):
@@ -58,10 +60,18 @@ class Serial(serial.Serial()):
        try:         
             while self.isOpen() : 
 
-                if (self.inWaiting() >= weft_size): # if incoming bytes are waiting 
-                    return self.read(weft_size)
-                          
+                if (self.inWaiting() >= self.protocol.size()):
+                    msg = self.read(self.protocol.size())
+                    return self.protocol.decode(msg)
+                
         except (KeyboardInterrupt, SystemExit):
             print("\nArrêt de la connexion série...")
             self.close()
             exit()
+    
+    def closeConnection(self):
+        '''
+        Ferme la connexion série.
+        '''
+        print("Fermeture de la connexion série...")
+        self.close()
