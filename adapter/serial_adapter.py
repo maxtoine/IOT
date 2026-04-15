@@ -1,7 +1,7 @@
 import serial
 
 
-class Serial(serial.Serial()):
+class SerialAdapter(serial.Serial):
     '''
     Classe Serial personnalisée pour gérer la connexion série et l'envoi de messages UART.
     Paramètres :
@@ -57,7 +57,7 @@ class Serial(serial.Serial()):
         Retourne :
         - str : Le message lu brut
         '''
-       try:         
+        try:         
             while self.isOpen() : 
 
                 if (self.inWaiting() >= self.protocol.size()):

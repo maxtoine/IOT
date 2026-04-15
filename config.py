@@ -1,0 +1,21 @@
+from dataclasses import dataclass
+from typing import Optional
+
+@dataclass
+class ServerConfig:
+    serial_port: str = "/dev/pts/3"
+    baudrate: int = 115200
+    storage_path: str = "values.txt"
+    udp_host: str = "127.0.0.1"
+    udp_port: int = 10001
+    
+    @classmethod
+    def from_env(cls):
+        import os
+        return cls(
+            serial_port=os.getenv('SERIAL_PORT', cls.serial_port),
+            baudrate=int(os.getenv('BAUDRATE', cls.baudrate)),
+            storage_path=os.getenv('STORAGE_PATH', cls.storage_path),
+            udp_host=os.getenv('UDP_HOST', cls.udp_host),
+            udp_port=int(os.getenv('UDP_PORT', cls.udp_port)),
+        )

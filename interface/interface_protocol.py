@@ -1,4 +1,4 @@
-from .core.model import Model
+from core.model import Model
 
 class InterfaceProtocol:
     
