@@ -1,5 +1,5 @@
 import ctypes
-from interface.interface_protocol import InterfaceProtocol
+from interface.interface_encodage import InterfaceEncodage
 from core.model import Model
 
 class MaTrame(ctypes.LittleEndianStructure):
@@ -13,7 +13,7 @@ class MaTrame(ctypes.LittleEndianStructure):
         ("fin",     ctypes.c_ubyte)     # 1 octet
     ]
 
-class BinaryProtocol(InterfaceProtocol):
+class BinaryEncodage(InterfaceEncodage):
     def encode(self, data: Model) -> bytes:
         trame = MaTrame()
         trame.adresse = int(data.adress)

@@ -1,6 +1,5 @@
 from adapter import SerialAdapter
-from adapter.udp import UDPAdapter
-from implementations.protocols import BinaryProtocol
+from implementations.encodages import TextEncodage
 from implementations.storages.storage import FileStorage
 from config import ServerConfig
 
@@ -8,12 +7,12 @@ class ServerIot:
     
     def __init__(self, config: ServerConfig):
         self.config = config
-        self.protocol_binary = BinaryProtocol()
+        self.protocol_binary = TextEncodage()
         self.storage = FileStorage(config.storage_path)
         self.serial_adapter = SerialAdapter(
             port=config.serial_port,
             baudrate=config.baudrate,
-            protocol=self.protocol_binary,
+            encodage=self.protocol_binary,
         )
        
         

@@ -1,7 +1,7 @@
-from interface.interface_protocol import InterfaceProtocol
+from interface.interface_encodage import InterfaceEncodage
 from core.model import Model
 
-class TextProtocol(InterfaceProtocol):
+class TextEncodage(InterfaceEncodage):
     def encode(self, data: Model) -> bytes:
         values = [
             str(data.adress),

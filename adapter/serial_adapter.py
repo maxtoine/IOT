@@ -12,10 +12,10 @@ class SerialAdapter(serial.Serial):
     - sendUARTMessage(msg) : Envoie un message sur la connexion
     
     '''
-    def __init__(self, port, baudrate, protocol):
+    def __init__(self, port, baudrate, encodage):
         super().__init__()
         self._initUART(port, baudrate)
-        self.protocol = protocol
+        self.encodage = encodage
         
     def _initUART(self, serialport, baudrate):
         '''
@@ -46,19 +46,17 @@ class SerialAdapter(serial.Serial):
         Envoie un message sur la connexion série a faire l'encodage avants
         Paramètre : msg (str) - Le message à envoyer
         '''
-        msg_bytes = self.protocol.encode(msg)
+        msg_bytes = self.encodage.encode(msg)
         self.write(msg_bytes)
         print("UART Envoyé: <{msg}>".format(msg=msg))
     
     def readUARTMessage(self):
         '''
-        Laisse le protocole gérer sa propre lecture.
+        Laisse le encodagee gérer sa propre lecture.
         '''
         try:         
             while self.isOpen(): 
-                # MAGIE DE L'OOP : On donne "nous-même" (le port série) au protocole
-                model = self.protocol.read_from_port(self)
-                
+                model = self.encodage.read_from_port(self)                
                 if model:
                     return model
                 

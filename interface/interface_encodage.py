@@ -1,6 +1,6 @@
 from core.model import Model
 
-class InterfaceProtocol:
+class InterfaceEncodage:
     
     def decode(self, data) -> Model:
         raise NotImplementedError()
