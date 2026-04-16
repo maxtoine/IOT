@@ -15,7 +15,6 @@ class ServerIot:
             encodage=self.protocol_binary,
         )
        
-        
     def start(self):
         print("Starting IoT Server...")
         self.run_serial_loop()
@@ -25,14 +24,12 @@ class ServerIot:
             try:
                 model = self.serial_adapter.readUARTMessage()
                 if model:
-                    print(f"Received serial message: {model}")
-                    self.storage.saveData(model)
+                    self.storage.save_data(model)
             except KeyboardInterrupt:
                 print("Stopping server...")
                 self.stop()
                 break
                 
-
     def stop(self):
         self.serial_adapter.closeConnection()
         self.udp_adapter.stop_server()

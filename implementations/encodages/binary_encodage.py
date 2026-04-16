@@ -16,22 +16,22 @@ class MaTrame(ctypes.LittleEndianStructure):
 class BinaryEncodage(InterfaceEncodage):
     def encode(self, data: Model) -> bytes:
         trame = MaTrame()
-        trame.adresse = int(data.adress)
+        trame.adresse = int(data.address)
         trame.tag = data.formats.encode('utf-8')
-        trame.f1 = data.data_1
-        trame.f2 = data.data_2
-        trame.f3 = data.data_3
+        trame.f1 = data.value_a
+        trame.f2 = data.value_b
+        trame.f3 = data.value_c
         trame.fin = int(data.end)
         return bytes(trame)
 
     def decode(self, data: bytes) -> Model:
         trame = MaTrame.from_buffer_copy(data)
         return Model(
-            adress=trame.adresse,
+            address=trame.adresse,
             formats=trame.tag.decode('utf-8'),
-            data_1=trame.f1,
-            data_2=trame.f2,
-            data_3=trame.f3,
+            value_a=trame.f1,
+            value_b=trame.f2,
+            value_c=trame.f3,
             end=trame.fin
         )
 

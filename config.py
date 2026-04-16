@@ -6,8 +6,7 @@ class ServerConfig:
     serial_port: str = "/dev/pts/3"
     baudrate: int = 115200
     storage_path: str = "values.txt"
-    udp_host: str = "127.0.0.1"
-    udp_port: int = 10001
+    
     
     @classmethod
     def from_env(cls):

@@ -56,7 +56,7 @@ class SerialAdapter(serial.Serial):
         '''
         try:         
             while self.isOpen(): 
-                model = self.encodage.read_from_port(self)                
+                model = self.encodage.read_from_port(self)
                 if model:
                     return model
                 

@@ -1,3 +1,4 @@
+from core.model import Model
 
 class InterfaceSave():
     '''
@@ -9,29 +10,37 @@ class InterfaceSave():
      - deleteData() : Supprime les données sauvegardées
      - dataExists() : Vérifie si des données sont déjà sauvegardées
     '''
-    def saveData(self, data):
+    def shearch_data(self, query) -> list[Model]:
+        '''
+        Recherche des données correspondant à la requête fournie.
+        Paramètre : query (any) - La requête de recherche
+        Retour : Les données correspondant à la requête
+        '''
+        raise NotImplementedError("La méthode shearch_data doit être implémentée.")
+    
+    def save_data(self, data: Model):
         '''
         Sauvegarde les données fournies.
-        Paramètre : data (any) - Les données à sauvegarder
+        Paramètre : data (Model) - Les données à sauvegarder
         '''
-        raise NotImplementedError("La méthode saveData doit être implémentée.")
+        raise NotImplementedError("La méthode save_data doit être implémentée.")
     
-    def loadData(self):
+    def load_data(self):
         '''
         Charge et retourne les données sauvegardées.
         Retour : Les données chargées
         '''
-        raise NotImplementedError("La méthode loadData doit être implémentée.")
+        raise NotImplementedError("La méthode load_data doit être implémentée.")
     
-    def deleteData(self):
+    def delete_data(self):
         '''
         Supprime les données sauvegardées.
         '''
-        raise NotImplementedError("La méthode deleteData doit être implémentée.")
+        raise NotImplementedError("La méthode delete_data doit être implémentée.")
     
-    def dataExists(self):
+    def data_exists(self):
         '''
         Vérifie si des données sont déjà sauvegardées.
         Retour : True si des données existent, False sinon
         '''
-        raise NotImplementedError("La méthode dataExists doit être implémentée.")
+        raise NotImplementedError("La méthode data_exists doit être implémentée.")
