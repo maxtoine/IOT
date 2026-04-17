@@ -3,7 +3,7 @@ import time
 import random
 
 # --- CONFIGURATION DU CLIENT ---
-SERIALPORT = "/dev/pts/4" 
+SERIALPORT = "/dev/pts/1" 
 BAUDRATE = 115200
 
 def run_client_independant():
@@ -24,7 +24,7 @@ def run_client_independant():
     try:
         while True:
             # 1. Génération des données factices
-            adresse = "42"
+            adresse = "42"  # Doit être une chaîne de caractères pour le format texte
             tag = "SEN"
             f1 = round(random.uniform(10.0, 30.0), 2)
             f2 = round(random.uniform(50.0, 100.0), 2)

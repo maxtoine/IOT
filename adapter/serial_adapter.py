@@ -1,75 +1,46 @@
 import serial
 
-
-class SerialAdapter(serial.Serial):
-    '''
-    Classe Serial personnalisée pour gérer la connexion série et l'envoi de messages UART.
-    Paramètres :
-    - port : Le port série à utiliser (ex: "/dev/ttyS2")
-    - baudrate : La vitesse de communication (ex: 115200)
-    
-    Méthodes :
-    - sendUARTMessage(msg) : Envoie un message sur la connexion
-    
-    '''
-    def __init__(self, port, baudrate, encodage):
-        super().__init__()
-        self._initUART(port, baudrate)
-        self.encodage = encodage
-        
-    def _initUART(self, serialport, baudrate):
-        '''
-        Initialise la connexion série avec les paramètres spécifiés.
-        
-        Paramètres :
-        - serialport (str) : Le port série à utiliser (ex: "/dev/ttyS2")
-        - baudrate (int) : La vitesse de communication (ex: 115200)
-        '''
-               
-        self.port = serialport
+class SerialAdapter:
+    def __init__(self, port: str, baudrate: int, read_mode: str = "line", length: int = 0):
+        self.port = port
         self.baudrate = baudrate
-        self.bytesize = serial.EIGHTBITS
-        self.parity = serial.PARITY_NONE
-        self.stopbits = serial.STOPBITS_ONE
-        self.timeout = 0.1 # Petit timeout pour ne pas bloquer le CPU
+        self.read_mode = read_mode
+        self.length = length
+        self._serial = serial.Serial()
+        self._init_uart()
         
-        print(f'Connexion série sur {serialport}...')
+    def _init_uart(self):
+        self._serial.port = self.port
+        self._serial.baudrate = self.baudrate
+        self._serial.bytesize = serial.EIGHTBITS
+        self._serial.parity = serial.PARITY_NONE
+        self._serial.stopbits = serial.STOPBITS_ONE
+        self._serial.timeout = 0.1 
+        
+        print(f"Connexion série sur {self.port} à {self.baudrate} bauds...")
         try:
-            self.open()
-            
+            self._serial.open()
         except serial.SerialException as e:
-            print(f"Erreur: Port {serialport} non disponible. ({e})")
+            print(f"Erreur: Port {self.port} non disponible. ({e})")
             exit()
     
-    def sendUARTMessage(self, msg):
-        ''' 
-        Envoie un message sur la connexion série a faire l'encodage avants
-        Paramètre : msg (str) - Le message à envoyer
-        '''
-        msg_bytes = self.encodage.encode(msg)
-        self.write(msg_bytes)
-        print("UART Envoyé: <{msg}>".format(msg=msg))
-    
-    def readUARTMessage(self):
-        '''
-        Laisse le encodagee gérer sa propre lecture.
-        '''
-        try:         
-            while self.isOpen(): 
-                model = self.encodage.read_from_port(self)
-                if model:
-                    return model
-                
-        except (KeyboardInterrupt, SystemExit):
-            print("\nArrêt de la connexion série...")
-            self.close()
-            exit()
+    def read_raw(self) -> bytes:
+        """Lit toutes les données disponibles dans le port série, sans filtre."""
+        if not self._serial.is_open:
+            return None
+
+        in_waiting = self._serial.in_waiting
+        if in_waiting > 0:
+            return self._serial.read(in_waiting) # On aspire TOUT ce qui est prêt
             
         return None
+                    
+        
+    def send_raw(self, data: bytes):
+        if self._serial.is_open:
+            self._serial.write(data)
     
-    def closeConnection(self):
-        '''
-        Ferme la connexion série.
-        '''
+    def close_connection(self):
         print("Fermeture de la connexion série...")
-        self.close()
+        if self._serial.is_open:
+            self._serial.close()

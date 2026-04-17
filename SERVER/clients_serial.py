@@ -6,7 +6,7 @@ import random
 # --- CONFIGURATION ---
 # IMPORTANT : Si le serveur écoute sur /dev/pts/3, le client doit être sur le port lié (ex: /dev/pts/4).
 # Voir l'astuce 'socat' ci-dessous pour créer ce lien virtuel.
-SERIALPORT = "/dev/pts/4" 
+SERIALPORT = "/dev/pts/1" 
 BAUDRATE = 115200
 
 def run_client():
