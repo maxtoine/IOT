@@ -17,7 +17,7 @@ class MaTrame(ctypes.LittleEndianStructure):
     ]
 
 class BinaryEncodage(InterfaceEncodage):
-    framing_mode = "fixed"
+  
     framing_length = ctypes.sizeof(MaTrame) # 17 octets
 
     def extract_frames(self, buffer: bytes) -> tuple[list[bytes], bytes]:

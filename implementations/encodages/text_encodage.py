@@ -5,8 +5,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 class TextEncodage(InterfaceEncodage):
-    framing_mode = "line"
-    framing_length = 0
+
 
     def _extract_frames_impl(self, buffer: bytes) -> tuple[list[bytes], bytes]:
         trames_completes = []
@@ -58,8 +57,8 @@ class TextEncodage(InterfaceEncodage):
         return Model(
             address=parts[0],
             formats=formats,
-            value_a=float(parts[2]),
-            value_b=float(parts[3]),
-            value_c=float(parts[4]),
-            end=float(parts[5])
+            value_a=parts[2],
+            value_b=parts[3],
+            value_c=parts[4],
+            end=parts[5]
         )

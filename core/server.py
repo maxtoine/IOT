@@ -30,7 +30,7 @@ class ServerIot:
                     for trame in trames_completes:
                         adresse_recue = self.encodage.extract_address(trame)
                         
-                        if adresse_recue == self.mon_adresse or adresse_recue == "00":
+                        if adresse_recue in (self.mon_adresse, "0"):
                             model = self.encodage.decode(trame)
                             print(f"[+] Message décodé : {model}")
                             self.storage.save_data(model)

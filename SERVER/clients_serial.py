@@ -24,7 +24,7 @@ def run_client():
         return
 
     # Paramètres fixes pour la simulation
-    adresse = 42              # 1 octet (0-255)
+    adresse = 00              # 1 octet (0-255)
     tag = b"SEN"              # 3 octets (doit être en bytes)
     fin = 255                 # 1 octet (0-255)
 

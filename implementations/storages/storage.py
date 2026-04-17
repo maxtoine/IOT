@@ -21,10 +21,10 @@ class FileStorage(InterfaceSave):
                         model = Model(
                             address=elements[0],
                             formats=elements[1].upper(),
-                            value_a=float(elements[2]),  # Au lieu de temperature
-                            value_b=float(elements[3]),  # Au lieu de luminosity
-                            value_c=float(elements[4]),  # Au lieu de humidity
-                            end=float(elements[5])
+                            value_a=elements[2],  # Au lieu de temperature
+                            value_b=elements[3],  # Au lieu de luminosity
+                            value_c=elements[4],  # Au lieu de humidity
+                            end=elements[5]
                         )
                         liste_models.append(model)
             return liste_models
