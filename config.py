@@ -5,8 +5,7 @@ from typing import Optional
 class ServerConfig:
     serial_port: str = "/dev/pts/3"
     baudrate: int = 115200
-    storage_path: str = "values.txt"
-    
+    storage_path: str = "values.db"
     
     @classmethod
     def from_env(cls):

@@ -9,7 +9,7 @@ HOST = "0.0.0.0"
 UDP_PORT = 10000
 MICRO_COMMANDS = ["TL", "LT"]
 FILENAME = "values.txt"
-SERIALPORT = "/dev/pts/3"  # Change en /dev/ttyS2 si tu es sur Linux
+SERIALPORT = "/dev/pts/3"  # Changer en /dev/ttyS2 pour Linux
 BAUDRATE = 115200
 
 # --- DÉFINITION DE LA STRUCTURE (C-Style) ---
