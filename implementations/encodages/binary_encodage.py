@@ -62,7 +62,7 @@ class BinaryEncodage(InterfaceEncodage):
         # Ultra rapide : l'adresse est le TOUT PREMIER octet (index 0) !
         if len(data) < 1:
             raise ValueError("Données insuffisantes pour extraire l'adresse")
-        return str(data[0])
+        return data[0]
     
     def encode(self, data: Model) -> bytes:
         trame = MaTrame()

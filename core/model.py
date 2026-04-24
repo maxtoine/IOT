@@ -1,5 +1,5 @@
 class Model():
-    def __init__(self, address: str, formats: str, temperature: float, luminosity: float, humidity: float, pressure: float, uv: float, end: float):
+    def __init__(self, address, formats, temperature = None, luminosity = None, humidity = None, pressure = None, uv = None, end = None):
         self.address = address
         self.formats = formats
         self.temperature = temperature

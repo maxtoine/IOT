@@ -1,24 +1,67 @@
 from interface.interface_save import InterfaceSave
 from interface.interface_encodage import InterfaceEncodage
-from adapter import SerialAdapter
+
+import time
 
 class ServerIot:
-    def __init__(self, adapter, encodage, storage, mon_adresse: str):
-        self.adapter = adapter
+   
+    def __init__(self, adapter_serial, udp_adapter, encodage, storage):
+        
+        #self.adapter_serial = adapter_serial
+        self.udp_adapter = udp_adapter
         self.encodage = encodage
         self.storage = storage
-        self.mon_adresse = str(mon_adresse)
-       
+        self._last_model = None
+        self.mon_adresse = 42 
+        self.udp_adapter.set_logic_callback(self.process_udp_logic) 
+
+    
+    
     def start(self):
         print("Starting IoT Server...")
-        self.run_serial_loop()
-        
-    def run_serial_loop(self):
-        buffer_global = b""  # Notre mémoire tampon
+        self.udp_adapter.start()
         
         while True:
+            time.sleep(1)  # Juste pour éviter de boucler à 100% inutilement
+            
+        #self.run_serial_loop()
+    
+    def process_udp_logic(self, data: dict) -> dict:
+        """
+        Le cerveau reçoit un DICTIONNAIRE et doit renvoyer un DICTIONNAIRE.
+        Il ne sait pas que ça vient d'un JSON !
+        """
+        print(f"[Logique IOT] Reçu : {data}")
+
+        # On extrait la commande (par exemple, si le client Android envoie {"commande": "getValues"})
+        commande = data.get("method")
+
+        match commande:
+            case "poll":
+                list_data = self.storage.search_data(data.get("adress"))
+                data_last = list_data[0]
+                json = {
+                    "status": "success",
+                    "adress": data_last.address,
+                    "formats": data_last.formats,
+                    "temperature": data_last.temperature,
+                    "humidity": data_last.humidity,
+                    "luminosity": data_last.luminosity,
+                    "pressure" : data_last.pressure,
+                    "uv" : data_last.uv,
+                }      
+                return json
+            
+            case _:
+                return {"status": "error", "message": "Commande inconnue"}
+
+    """    
+    def run_serial_loop(self):
+        buffer_global = b""  # Notre mémoire tampon
+
+        while True:
             try:
-                raw_chunk = self.adapter.read_raw()
+                raw_chunk = self.adapter_serial.read_raw()
                 
                 if raw_chunk:
                     buffer_global += raw_chunk  # On ajoute les nouveaux morceaux au tampon
@@ -30,16 +73,17 @@ class ServerIot:
                     for trame in trames_completes:
                         adresse_recue = self.encodage.extract_address(trame)
                         
-                        if adresse_recue in (self.mon_adresse, "0"):
+                        if adresse_recue == self.mon_adresse:
                             model = self.encodage.decode(trame)
                             print(f"[+] Message décodé : {model}")
                             self.storage.save_data(model)
-                        else:
-                            print(f"[-] Ignoré (Adresse {adresse_recue} inconnue)")
+                            time.sleep(0.1)
 
             except KeyboardInterrupt:
                 self.stop()
-                break
+                break"""
                 
     def stop(self):
-        self.adapter.close_connection()
+        #self.adapter_serial.close_connection()
+        self.udp_adapter.stop()
+        print("IoT Server stopped.")
