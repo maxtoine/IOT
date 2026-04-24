@@ -5,8 +5,7 @@ import random
 
 # --- CONFIGURATION ---
 # IMPORTANT : Si le serveur écoute sur /dev/pts/3, le client doit être sur le port lié (ex: /dev/pts/4).
-# Voir l'astuce 'socat' ci-dessous pour créer ce lien virtuel.
-SERIALPORT = "/dev/pts/1" 
+SERIALPORT = "/dev/pts/3" 
 BAUDRATE = 115200
 
 def run_client():
@@ -46,7 +45,7 @@ def run_client():
             # f  : float (4 octets)        -> f2
             # f  : float (4 octets)        -> f3
             # B  : unsigned char (1 octet) -> fin
-            # Total : 1 + 3 + 4 + 4 + 4 + 1 = 17 octets (Pile la taille de ta MaTrame !)
+            # Total : 1 + 3 + 4 + 4 + 4 + 1 = 17 octets
             
             trame = struct.pack('<B3sfffB', adresse, tag, f1, f2, f3, fin)
             

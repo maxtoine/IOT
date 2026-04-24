@@ -9,7 +9,7 @@ stockage = SQLiteStorage("values.db")
 
 # 2. On configure l'adaptateur série en utilisant read_mode et length
 adapter = SerialAdapter(
-    port="/dev/pts/0", 
+    port="/dev/pts/4", 
     baudrate=115200, 
     length=encodage.framing_length
 )
@@ -19,7 +19,7 @@ serveur = ServerIot(
     adapter=adapter, 
     encodage=encodage, 
     storage=stockage, 
-    mon_adresse="42"
+    mon_adresse="0"
 )
 
 

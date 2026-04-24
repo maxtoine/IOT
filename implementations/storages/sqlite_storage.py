@@ -3,13 +3,14 @@ import os
 from interface.interface_save import InterfaceSave
 from core.model import Model
 
+
 class SQLiteStorage(InterfaceSave):
     """
     Usage:
         storage = SQLiteStorage("values.db")
         storage.save_data(model)
-        results = storage.search_data("42")
-        all_data = storage.load_data()
+        results = search_data("42")
+        all_data = load_data()
     """
 
     def __init__(self, db_path: str = "values.db"):
@@ -22,17 +23,18 @@ class SQLiteStorage(InterfaceSave):
         with sqlite3.connect(self.db_path) as conn:
             conn.execute("""
                 CREATE TABLE IF NOT EXISTS sensor_data (
-                    id        INTEGER PRIMARY KEY AUTOINCREMENT,
-                    address   TEXT    NOT NULL,
-                    formats   TEXT    NOT NULL,
-                    value_a   REAL,
-                    value_b   REAL,
-                    value_c   REAL,
-                    end       REAL,
-                    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+                    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                    address     TEXT    NOT NULL,
+                    formats     TEXT    NOT NULL,
+                    temperature REAL,
+                    luminosity  REAL,
+                    humidity    REAL,
+                    pressure    REAL,
+                    uv          REAL,
+                    end         REAL,
+                    timestamp   DATETIME DEFAULT CURRENT_TIMESTAMP
                 )
             """)
-            # Index pour accélérer les recherches par adresse
             conn.execute("""
                 CREATE INDEX IF NOT EXISTS idx_address
                 ON sensor_data (address)
@@ -42,16 +44,19 @@ class SQLiteStorage(InterfaceSave):
     # CRUD
 
     def save_data(self, data: Model):
+        print(f"[DB] Sauvegarde : {data}")
         with sqlite3.connect(self.db_path) as conn:
             conn.execute(
-                """INSERT INTO sensor_data (address, formats, value_a, value_b, value_c, end)
-                   VALUES (?, ?, ?, ?, ?, ?)""",
+                """INSERT INTO sensor_data (address, formats, temperature, luminosity, humidity, pressure, uv, end)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
                 (
                     str(data.address),
                     str(data.formats).upper(),
-                    float(data.value_a),
-                    float(data.value_b),
-                    float(data.value_c),
+                    float(data.temperature),
+                    float(data.luminosity),
+                    float(data.humidity),
+                    float(data.pressure),
+                    float(data.uv),
                     float(data.end),
                 ),
             )
@@ -104,7 +109,7 @@ class SQLiteStorage(InterfaceSave):
         except Exception:
             return False
 
-    # Retourne les n derniers enregistrements. Si address est précisé, filtre par adresse
+    # Retourne les n derniers enregistrements. Si address est précisé, filtre par adresse.
     def get_last_n(self, n: int, address: str = None) -> list[Model]:
         liste_models = []
         try:
@@ -126,7 +131,7 @@ class SQLiteStorage(InterfaceSave):
             print(f"Erreur get_last_n : {e}")
         return liste_models
 
-    # Retourne la liste des adresses (objets) distincts présents en base.
+    # Retourne la liste des adresses distinctes présentes en base.
     def get_all_addresses(self) -> list[str]:
         try:
             with sqlite3.connect(self.db_path) as conn:
@@ -138,21 +143,23 @@ class SQLiteStorage(InterfaceSave):
             print(f"Erreur get_all_addresses : {e}")
             return []
 
-    # Supprime le fichier .db entièrement (équivalent à os.remove du .txt).
+    # Supprime le fichier .db entièrement.
     def drop_database(self):
         try:
             os.remove(self.db_path)
         except FileNotFoundError:
             pass
 
-    # Convertit SQLite en objet Model
+    # Convertit une ligne SQLite en objet Model
     @staticmethod
     def _row_to_model(row: sqlite3.Row) -> Model:
         return Model(
             address=row["address"],
             formats=row["formats"],
-            value_a=str(row["value_a"]),
-            value_b=str(row["value_b"]),
-            value_c=str(row["value_c"]),
+            temperature=str(row["temperature"]),
+            luminosity=str(row["luminosity"]),
+            humidity=str(row["humidity"]),
+            pressure=str(row["pressure"]),
+            uv=str(row["uv"]),
             end=str(row["end"]),
         )
