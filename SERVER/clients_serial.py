@@ -4,8 +4,7 @@ import time
 import random
 
 # --- CONFIGURATION ---
-# IMPORTANT : Si le serveur écoute sur /dev/pts/3, le client doit être sur le port lié (ex: /dev/pts/4).
-SERIALPORT = "/dev/pts/3" 
+SERIALPORT = "/dev/pts/3"
 BAUDRATE = 115200
 
 def run_client():
@@ -23,38 +22,42 @@ def run_client():
         return
 
     # Paramètres fixes pour la simulation
-    adresse = 00              # 1 octet (0-255)
-    tag = b"SEN"              # 3 octets (doit être en bytes)
-    fin = 255                 # 1 octet (0-255)
+    adresse = 0        # 1 octet (0-255)
+    tag = b"SEN"       # 3 octets
+    fin = 255          # 1 octet (0-255)
 
     print("Début de l'envoi des trames. Appuyez sur Ctrl+C pour arrêter.")
 
     try:
         while True:
-            # Génération de valeurs flottantes aléatoires pour f1, f2, f3
-            f1 = random.uniform(10.0, 30.0)
-            f2 = random.uniform(50.0, 100.0)
-            f3 = random.uniform(-10.0, 10.0)
+            # Génération de valeurs aléatoires simulant les capteurs
+            temperature = random.uniform(10.0, 30.0)    # °C
+            luminosity  = random.uniform(50.0, 100.0)   # %
+            humidity    = random.uniform(-10.0, 10.0)   # %
+            pressure    = random.uniform(950.0, 1050.0) # hPa
+            uv          = random.uniform(0.0, 11.0)     # indice UV
 
             # --- PACKING BINAIRE ---
-            # Explication du format '<B3sfffB' :
-            # <  : Little-Endian (comme attendu par ton serveur)
-            # B  : unsigned char (1 octet) -> adresse
-            # 3s : char[3] (3 octets)      -> tag
-            # f  : float (4 octets)        -> f1
-            # f  : float (4 octets)        -> f2
-            # f  : float (4 octets)        -> f3
-            # B  : unsigned char (1 octet) -> fin
-            # Total : 1 + 3 + 4 + 4 + 4 + 1 = 17 octets
-            
-            trame = struct.pack('<B3sfffB', adresse, tag, f1, f2, f3, fin)
-            
-            # Envoi sur le port série
+            # Format '<B3sfffffB' :
+            # <  : Little-Endian
+            # B  : unsigned char (1 octet)  -> adresse
+            # 3s : char[3] (3 octets)       -> tag
+            # f  : float (4 octets)         -> temperature
+            # f  : float (4 octets)         -> luminosity
+            # f  : float (4 octets)         -> humidity
+            # f  : float (4 octets)         -> pressure
+            # f  : float (4 octets)         -> uv
+            # B  : unsigned char (1 octet)  -> fin
+            # Total : 1 + 3 + 4*5 + 1 = 25 octets
+            trame = struct.pack('<B3sfffffB', adresse, tag, temperature, luminosity, humidity, pressure, uv, fin)
+
             ser.write(trame)
-            
-            print(f"📤 Envoyé : ID:{adresse} | TAG:{tag.decode()} | F1:{f1:.2f} | F2:{f2:.2f} | F3:{f3:.2f}")
-            
-            # Pause avant le prochain envoi
+            print(
+                f"📤 Envoyé : ID:{adresse} | TAG:{tag.decode()} | "
+                f"TEMP:{temperature:.2f} | LUM:{luminosity:.2f} | "
+                f"HUM:{humidity:.2f} | PRES:{pressure:.2f} | UV:{uv:.2f}"
+            )
+
             time.sleep(1)
 
     except KeyboardInterrupt:
