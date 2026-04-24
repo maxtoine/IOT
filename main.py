@@ -10,15 +10,17 @@ adresse="0.0.0.0"
 port=10000
 
 # 2. On configure l'adaptateur série en utilisant read_mode et length
-adapter = SerialAdapter(
-    port="/dev/pts/4", 
+adapter_serial = SerialAdapter(
+    port="/dev/pts/1", 
     baudrate=115200, 
     length=encodage.framing_length
 )
 
+udp_adapter = UdpAdapter(adresse, port)
+
 # 3. On injecte tout dans le serveur
 serveur = ServerIot(
-    adapter_serial=None, 
+    adapter_serial=adapter_serial, 
     udp_adapter=udp_adapter, 
     encodage=encodage, 
     storage=stockage, 

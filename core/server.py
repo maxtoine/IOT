@@ -7,7 +7,7 @@ class ServerIot:
    
     def __init__(self, adapter_serial, udp_adapter, encodage, storage):
         
-        #self.adapter_serial = adapter_serial
+        self.adapter_serial = adapter_serial
         self.udp_adapter = udp_adapter
         self.encodage = encodage
         self.storage = storage
@@ -20,11 +20,7 @@ class ServerIot:
     def start(self):
         print("Starting IoT Server...")
         self.udp_adapter.start()
-        
-        while True:
-            time.sleep(1)  # Juste pour éviter de boucler à 100% inutilement
-            
-        #self.run_serial_loop()
+        self.run_serial_loop()
     
     def process_udp_logic(self, data: dict) -> dict:
         """
@@ -55,7 +51,7 @@ class ServerIot:
             case _:
                 return {"status": "error", "message": "Commande inconnue"}
 
-    """    
+        
     def run_serial_loop(self):
         buffer_global = b""  # Notre mémoire tampon
 
@@ -77,13 +73,14 @@ class ServerIot:
                             model = self.encodage.decode(trame)
                             print(f"[+] Message décodé : {model}")
                             self.storage.save_data(model)
-                            time.sleep(0.1)
+            
+            time.sleep(0.1)
 
             except KeyboardInterrupt:
                 self.stop()
-                break"""
+                break
                 
     def stop(self):
-        #self.adapter_serial.close_connection()
+        self.adapter_serial.close_connection()
         self.udp_adapter.stop()
         print("IoT Server stopped.")
