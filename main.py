@@ -4,7 +4,7 @@ from implementations.storages import SQLiteStorage
 from adapter import SerialAdapter, UdpAdapter
 
 # 1. On choisit le protocole et le stockage
-encodage = BinaryEncodage() 
+serial_encodage = BinaryEncodage() 
 json_encodage = JsonEncodage()
 stockage = SQLiteStorage("values.db")
 
@@ -12,18 +12,19 @@ stockage = SQLiteStorage("values.db")
 adapter_serial = SerialAdapter(
     port="/dev/pts/1", 
     baudrate=115200, 
-    length=encodage.framing_length
+    length=serial_encodage.framing_length
 )
 
 udp_adapter = UdpAdapter(
     "0.0.0.0", 
     10000, 
     encodage=json_encodage)
+
 # 3. On injecte tout dans le serveur
 serveur = ServerIot(
     adapter_serial=adapter_serial, 
     udp_adapter=udp_adapter, 
-    encodage=encodage, 
+    serial_encodage=serial_encodage, 
     storage=stockage, 
 )
 

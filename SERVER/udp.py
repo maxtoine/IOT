@@ -8,7 +8,8 @@ sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 # On prépare une structure de données
 data_to_send = {
     "method": "poll",
-    "adress": "42"
+    "address": "42",
+    "formats": "TULPH"
 }
 
 # Conversion du dictionnaire en chaîne JSON, puis en octets

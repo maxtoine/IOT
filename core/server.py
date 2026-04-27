@@ -1,61 +1,34 @@
 from interface.interface_save import InterfaceSave
 from interface.interface_encodage import InterfaceEncodage
+from protocol import UdpController
 
 import time
 
 class ServerIot:
    
-    def __init__(self, adapter_serial, udp_adapter, encodage, storage, adresse=0):
+    def __init__(self, adapter_serial, udp_adapter, serial_encodage, storage, adresse=0):
         
         self.adapter_serial = adapter_serial
         self.udp_adapter = udp_adapter
-        self.encodage = encodage
+        self.serial_encodage = serial_encodage
         self.storage = storage
         self.mon_adresse = adresse
-        self._last_model = None
-        self.udp_adapter.set_logic_callback(self.process_udp_logic) 
 
-    
-    
+        # Le Cerveau UDP (qui a besoin du stockage et de l'accès matériel)
+        self.udp_controller = UdpController(
+            storage=self.storage, 
+            serial_adapter=self.adapter_serial,
+            serial_encodage=self.serial_encodage,
+            mon_adresse=self.mon_adresse
+        )
+        
+        self.udp_adapter.set_logic_callback(self.udp_controller.process_request)
+
     def start(self):
         print("Starting IoT Server...")
         self.udp_adapter.start()
         self.run_serial_loop()
     
-    def process_udp_logic(self, data: dict) -> dict:
-        """
-        Le cerveau reçoit un DICTIONNAIRE et doit renvoyer un DICTIONNAIRE.
-        Il ne sait pas que ça vient d'un JSON !
-        """
-        print(f"[Logique IOT] Reçu : {data}")
-
-        # On extrait la commande (par exemple, si le client Android envoie {"commande": "getValues"})
-        commande = data.get("method")
-
-        match commande:
-            case "poll":
-                list_data = self.storage.search_data(data.get("adress"))
-                data_last = list_data[0]
-                json = {
-                    "status": "success",
-                    "adress": data_last.address,
-                    "formats": data_last.formats,
-                    "temperature": data_last.temperature,
-                    "humidity": data_last.humidity,
-                    "luminosity": data_last.luminosity,
-                    "pressure" : data_last.pressure,
-                    "uv" : data_last.uv,
-                }      
-                return json
-            
-            case "formats": 
-                
-                return {"status": "success", "message": "OK"}
-            
-            case _:
-                return {"status": "error", "message": "Commande inconnue"}
-
-        
     def run_serial_loop(self):
         buffer_global = b""  # Notre mémoire tampon
         print("[Serial] Starting Serial Loop...")
@@ -68,13 +41,13 @@ class ServerIot:
                     
                     # On demande à l'encodage d'extraire TOUTES les trames complètes
                     # et de nous rendre ce qui n'est pas encore complet (le reste du buffer)
-                    trames_completes, buffer_global = self.encodage.extract_frames(buffer_global)
+                    trames_completes, buffer_global = self.serial_encodage.extract_frames(buffer_global)
                     
                     for trame in trames_completes:
-                        adresse_recue = self.encodage.extract_address(trame)
+                        adresse_recue = self.serial_encodage.extract_address(trame)
                         
                         if adresse_recue == self.mon_adresse:
-                            model = self.encodage.decode(trame)
+                            model = self.serial_encodage.decode(trame)
                             print(f"[+] Message décodé : {model}")
                             self.storage.save_data(model)
             

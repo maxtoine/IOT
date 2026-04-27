@@ -23,7 +23,7 @@ def run_client():
 
     # --- PARAMÈTRES DE LA TRAME ---
     address_destination = 0
-    adresse = 42         # 1 octet (B)
+    adresse = 52         # 1 octet (B)
     # Le tag DOIT faire 5 octets pour correspondre au (ctypes.c_char * 5) du serveur
     # On utilise "TLHPU" comme dans tes commentaires
     tag = b"TLHPU"       # 5 octets (5s)
