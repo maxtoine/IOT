@@ -11,7 +11,7 @@ class FileStorage(InterfaceSave):
         with open(self.filename, 'a+', encoding='utf-8') as f:
             pass
 
-    def search_data(self, query: str, separateur: str = ';') -> list[Model]:
+    def search_data(self, query, separateur: str = ';') -> list[Model]:
         liste_models = []
         try:
             with open(self.filename, 'r', encoding='utf-8') as f:
@@ -21,10 +21,10 @@ class FileStorage(InterfaceSave):
                         model = Model(
                             address=elements[0],
                             formats=elements[1].upper(),
-                            value_a=elements[2],  # Au lieu de temperature
-                            value_b=elements[3],  # Au lieu de luminosity
-                            value_c=elements[4],  # Au lieu de humidity
-                            end=elements[5]
+                            temperature=elements[2],  # Au lieu de temperature
+                            luminosity=elements[3],  # Au lieu de luminosity
+                            humidity=elements[4],  # Au lieu de humidity
+                            pressure=elements[5]
                         )
                         liste_models.append(model)
             return liste_models

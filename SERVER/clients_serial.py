@@ -4,7 +4,7 @@ import time
 import random
 
 # --- CONFIGURATION ---
-SERIALPORT = "/dev/pts/3"
+SERIALPORT = "/dev/pts/2"
 BAUDRATE = 115200
 
 def run_client():
@@ -21,49 +21,60 @@ def run_client():
         print(f"❌ Erreur : Port {SERIALPORT} non disponible. ({e})")
         return
 
-    # Paramètres fixes pour la simulation
-    adresse = 0        # 1 octet (0-255)
-    tag = b"SEN"       # 3 octets
-    fin = 255          # 1 octet (0-255)
+    # --- PARAMÈTRES DE LA TRAME ---
+    address_destination = 0
+    adresse = 52         # 1 octet (B)
+    # Le tag DOIT faire 5 octets pour correspondre au (ctypes.c_char * 5) du serveur
+    # On utilise "TLHPU" comme dans tes commentaires
+    tag = b"TLHPU"       # 5 octets (5s)
+    fin = 255            # 1 octet (B)
 
-    print("Début de l'envoi des trames. Appuyez sur Ctrl+C pour arrêter.")
+    print("Début de l'envoi des trames (Format 27 octets).")
 
     try:
         while True:
-            # Génération de valeurs aléatoires simulant les capteurs
-            temperature = random.uniform(10.0, 30.0)    # °C
-            luminosity  = random.uniform(50.0, 100.0)   # %
-            humidity    = random.uniform(-10.0, 10.0)   # %
-            pressure    = random.uniform(950.0, 1050.0) # hPa
-            uv          = random.uniform(0.0, 11.0)     # indice UV
+            # Génération de valeurs
+            temperature = random.uniform(10.0, 30.0)
+            luminosity  = random.uniform(50.0, 100.0)
+            humidity    = random.uniform(-10.0, 10.0)
+            pressure    = random.uniform(950.0, 1050.0)
+            uv          = random.uniform(0.0, 11.0)
 
-            # --- PACKING BINAIRE ---
-            # Format '<B3sfffffB' :
+            # --- PACKING BINAIRE CORRIGÉ ---
+            # Format '<B5sfffffB' :
             # <  : Little-Endian
-            # B  : unsigned char (1 octet)  -> adresse
-            # 3s : char[3] (3 octets)       -> tag
-            # f  : float (4 octets)         -> temperature
-            # f  : float (4 octets)         -> luminosity
-            # f  : float (4 octets)         -> humidity
-            # f  : float (4 octets)         -> pressure
-            # f  : float (4 octets)         -> uv
-            # B  : unsigned char (1 octet)  -> fin
-            # Total : 1 + 3 + 4*5 + 1 = 25 octets
-            trame = struct.pack('<B3sfffffB', adresse, tag, temperature, luminosity, humidity, pressure, uv, fin)
+            # B  : unsigned char (1 oct.) -> adresse_destination
+            # B  : unsigned char (1 oct.) -> adresse
+            # 5s : char[5] (5 oct.)       -> tag (Indispensable pour l'alignement)
+            # f  : float (4 oct.)         -> f1 (Temp)
+            # f  : float (4 oct.)         -> f2 (Lum)
+            # f  : float (4 oct.)         -> f3 (Hum)
+            # f  : float (4 oct.)         -> f4 (Pres)
+            # f  : float (4 oct.)         -> f5 (UV)
+            # B  : unsigned char (1 oct.) -> fin
+            # TOTAL : 1 + 5 + (4*5) + 1 = 27 octets
+            
+            trame = struct.pack('<BB5sfffffB', 
+                                address_destination,
+                                adresse, 
+                                tag, 
+                                temperature, 
+                                luminosity, 
+                                humidity, 
+                                pressure, 
+                                uv, 
+                                fin)
 
             ser.write(trame)
-            print(
-                f"📤 Envoyé : ID:{adresse} | TAG:{tag.decode()} | "
-                f"TEMP:{temperature:.2f} | LUM:{luminosity:.2f} | "
-                f"HUM:{humidity:.2f} | PRES:{pressure:.2f} | UV:{uv:.2f}"
-            )
+            
+            print(f"📤 Envoyé ({len(trame)} octets) : ID:{adresse} | TAG:{tag.decode()} | T:{temperature:.2f}°")
 
             time.sleep(1)
 
     except KeyboardInterrupt:
         print("\nArrêt du client...")
     finally:
-        if ser.is_open:
+        if 'ser' in locals() and ser.is_open:
             ser.close()
 
 if __name__ == '__main__':
