@@ -1,0 +1,2 @@
+refarctor se protocol udp dans un class dedier ansi que la partit des format qui et envoyer coter capteur 
+mise ne plasse de l'architecture de serveur qui permer de modifier extrement fasilment les storage encodeur pour le serial est l'udp ansi que le protocl communication entre l'android est le serial
