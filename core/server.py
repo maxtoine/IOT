@@ -46,7 +46,6 @@ class ServerIot:
             mon_adresse=self.mon_adresse
         )
         
-        # Attache la méthode de traitement des requêtes UDP au callback de l'adaptateur
         self.udp_adapter.set_logic_callback(self.udp_controller.process_request)
 
     def start(self):
@@ -98,12 +97,8 @@ class ServerIot:
                             # Décode la trame pour obtenir un modèle de données exploitable
                             model = self.serial_encodage.decode(trame)
                             print(f"[+] Message décodé : {model}")
-                            # Sauvegarde les données du capteur en base de données
                             self.storage.save_data(model)
-                        else:
-                            # Ignore les trames destinées à d'autres adresses
-                            print(f"[-] Adresse {addr} ignorée.")
-                # Pause courte pour éviter de surcharger le CPU
+            
                 time.sleep(0.1)
             except Exception as e:
                 # Gère les erreurs lors de la réception ou du traitement des données
