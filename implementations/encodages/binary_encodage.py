@@ -18,7 +18,8 @@ logger = logging.getLogger(__name__)
 class MaTrame(ctypes.LittleEndianStructure):
     _pack_ = 1  
     _fields_ = [
-        ("adresse", ctypes.c_ubyte),
+        ("address_destination", ctypes.c_ubyte), # 1 octet
+        ("address", ctypes.c_ubyte),
         ("tag",     ctypes.c_char * 5), # 5 caractères pour le tag (ex: "T", "L", "H", "P", "U")
         ("f1",      ctypes.c_float), # T
         ("f2",      ctypes.c_float), # L
@@ -30,7 +31,7 @@ class MaTrame(ctypes.LittleEndianStructure):
 
 class BinaryEncodage(InterfaceEncodage):
   
-    framing_length = ctypes.sizeof(MaTrame) # 25 octets
+    framing_length = ctypes.sizeof(MaTrame) # 26 octets
 
     def extract_frames(self, buffer: bytes) -> tuple[list[bytes], bytes]:
         """
@@ -45,15 +46,15 @@ class BinaryEncodage(InterfaceEncodage):
         
     def _extract_frames_impl(self, buffer: bytes) -> tuple[list[bytes], bytes]:
         trames_completes = []
-        taille_trame = self.framing_length # 25 octets
+        taille_trame = self.framing_length # 26 octets
         
         # On boucle tant qu'on a assez d'octets pour faire au moins une trame complète
         while len(buffer) >= taille_trame:
-            # On extrait les 25 premiers octets exacts
+            # On extrait les 26 premiers octets exacts
             trame = buffer[:taille_trame]
             trames_completes.append(trame)
             
-            # On retire ces 25 octets du buffer pour garder ce qui reste
+            # On retire ces 26 octets du buffer pour garder ce qui reste
             buffer = buffer[taille_trame:]
             
         return trames_completes, buffer
@@ -66,7 +67,8 @@ class BinaryEncodage(InterfaceEncodage):
     
     def encode(self, data: Model) -> bytes:
         trame = MaTrame()
-        trame.adresse = int(data.address)
+        trame.address_destination = int(data.address_destination)
+        trame.address = int(data.address)
         trame.tag = data.formats.encode('utf-8')
         trame.f1      = data.temperature
         trame.f2      = data.luminosity
@@ -80,7 +82,8 @@ class BinaryEncodage(InterfaceEncodage):
         trame = MaTrame.from_buffer_copy(data)
     
         return Model(
-            address=str(trame.adresse),
+            address_destination=trame.address_destination,
+            address=trame.address,
             formats=trame.tag.decode('utf-8'),
             temperature=trame.f1,
             luminosity=trame.f2,

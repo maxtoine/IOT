@@ -1,5 +1,6 @@
 class Model():
-    def __init__(self, address, formats, temperature = None, luminosity = None, humidity = None, pressure = None, uv = None, end = None):
+    def __init__(self ,address, formats, address_destination = None, temperature = None, luminosity = None, humidity = None, pressure = None, uv = None, end = None):
+        self.address_destination = address_destination
         self.address = address
         self.formats = formats
         self.temperature = temperature

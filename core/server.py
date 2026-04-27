@@ -5,14 +5,14 @@ import time
 
 class ServerIot:
    
-    def __init__(self, adapter_serial, udp_adapter, encodage, storage):
+    def __init__(self, adapter_serial, udp_adapter, encodage, storage, adresse=0):
         
         self.adapter_serial = adapter_serial
         self.udp_adapter = udp_adapter
         self.encodage = encodage
         self.storage = storage
+        self.mon_adresse = adresse
         self._last_model = None
-        self.mon_adresse = 42 
         self.udp_adapter.set_logic_callback(self.process_udp_logic) 
 
     
@@ -48,13 +48,17 @@ class ServerIot:
                 }      
                 return json
             
+            case "formats": 
+                
+                return {"status": "success", "message": "OK"}
+            
             case _:
                 return {"status": "error", "message": "Commande inconnue"}
 
         
     def run_serial_loop(self):
         buffer_global = b""  # Notre mémoire tampon
-
+        print("[Serial] Starting Serial Loop...")
         while True:
             try:
                 raw_chunk = self.adapter_serial.read_raw()
@@ -74,7 +78,7 @@ class ServerIot:
                             print(f"[+] Message décodé : {model}")
                             self.storage.save_data(model)
             
-            time.sleep(0.1)
+                time.sleep(0.1)
 
             except KeyboardInterrupt:
                 self.stop()

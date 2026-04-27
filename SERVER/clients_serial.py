@@ -22,6 +22,7 @@ def run_client():
         return
 
     # --- PARAMÈTRES DE LA TRAME ---
+    address_destination = 0
     adresse = 42         # 1 octet (B)
     # Le tag DOIT faire 5 octets pour correspondre au (ctypes.c_char * 5) du serveur
     # On utilise "TLHPU" comme dans tes commentaires
@@ -42,6 +43,7 @@ def run_client():
             # --- PACKING BINAIRE CORRIGÉ ---
             # Format '<B5sfffffB' :
             # <  : Little-Endian
+            # B  : unsigned char (1 oct.) -> adresse_destination
             # B  : unsigned char (1 oct.) -> adresse
             # 5s : char[5] (5 oct.)       -> tag (Indispensable pour l'alignement)
             # f  : float (4 oct.)         -> f1 (Temp)
@@ -52,7 +54,8 @@ def run_client():
             # B  : unsigned char (1 oct.) -> fin
             # TOTAL : 1 + 5 + (4*5) + 1 = 27 octets
             
-            trame = struct.pack('<B5sfffffB', 
+            trame = struct.pack('<BB5sfffffB', 
+                                address_destination,
                                 adresse, 
                                 tag, 
                                 temperature, 
