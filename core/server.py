@@ -1,6 +1,6 @@
 from interface.interface_save import InterfaceSave
 from interface.interface_encodage import InterfaceEncodage
-from protocol import UdpController
+from protocol import UdpController, SerialController
 
 import time
 
@@ -22,6 +22,12 @@ class ServerIot:
             mon_adresse=self.mon_adresse
         )
         
+        self.serial_controller = SerialController(
+            storage=self.storage,
+            serial_adapter=self.adapter_serial,
+            serial_encodage=self.serial_encodage,
+            mon_adresse=self.mon_adresse
+        )
         self.udp_adapter.set_logic_callback(self.udp_controller.process_request)
 
     def start(self):
@@ -49,7 +55,7 @@ class ServerIot:
                         if adresse_recue == self.mon_adresse:
                             model = self.serial_encodage.decode(trame)
                             print(f"[+] Message décodé : {model}")
-                            self.storage.save_data(model)
+                            self.serial_controller.process_request(model)
             
                 time.sleep(0.1)
 
