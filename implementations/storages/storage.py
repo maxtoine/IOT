@@ -17,22 +17,26 @@ class FileStorage(InterfaceSave):
             with open(self.filename, 'r', encoding='utf-8') as f:
                 for ligne in f:
                     elements = ligne.strip().split(separateur)
-                    if len(elements) >= 6 and elements[0].strip() == query:
+                    # On vérifie qu'on a bien les 8 colonnes (ID;TAG;T;L;H;P;U;FIN)
+                    if len(elements) >= 8 and elements[0].strip() == query:
                         model = Model(
                             address=elements[0],
                             formats=elements[1].upper(),
-                            temperature=elements[2],  # Au lieu de temperature
-                            luminosity=elements[3],  # Au lieu de luminosity
-                            humidity=elements[4],  # Au lieu de humidity
-                            pressure=elements[5]
+                            temperature=float(elements[2]),
+                            luminosity=float(elements[3]),
+                            humidity=float(elements[4]),
+                            pressure=float(elements[5]),
+                            uv=float(elements[6]),
+                            end=int(elements[7])
                         )
                         liste_models.append(model)
             return liste_models
         except Exception as e:
-            print(f"Erreur de recherche : {e}")
+            print(f"Erreur de recherche dans storage : {e}")
             return []
         
     def save_data(self, data: Model):
+        # Utilise la méthode __str__ du Model qui génère déjà les 8 colonnes
         with open(self.filename, 'a', encoding='utf-8') as f:
             f.write(str(data) + '\n')
 
@@ -46,4 +50,4 @@ class FileStorage(InterfaceSave):
         return os.path.exists(self.filename)
         
     def load_data(self):
-        pass # À implémenter selon tes besoins
+        pass

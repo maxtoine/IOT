@@ -30,32 +30,41 @@ class ServerIot:
         self.run_serial_loop()
     
     def run_serial_loop(self):
-        buffer_global = b""  # Notre mémoire tampon
-        print("[Serial] Starting Serial Loop...")
+        buffer_global = b""
+        print(f"[Serial] Surveillance active sur l'adresse : {self.mon_adresse}")
+        last_heartbeat = time.time()
+
         while True:
             try:
+                if time.time() - last_heartbeat > 5:
+                    print("[Système] Toujours en attente de données...")
+                    last_heartbeat = time.time()
+
+
                 raw_chunk = self.adapter_serial.read_raw()
                 
                 if raw_chunk:
-                    buffer_global += raw_chunk  # On ajoute les nouveaux morceaux au tampon
+                    buffer_global += raw_chunk
                     
-                    # On demande à l'encodage d'extraire TOUTES les trames complètes
-                    # et de nous rendre ce qui n'est pas encore complet (le reste du buffer)
                     trames_completes, buffer_global = self.serial_encodage.extract_frames(buffer_global)
                     
+                    if trames_completes:
+                        print(f"DEBUG: {len(trames_completes)} trame(s) extraite(s) !")
+                    
                     for trame in trames_completes:
-                        adresse_recue = self.serial_encodage.extract_address(trame)
-                        
-                        if adresse_recue == self.mon_adresse:
+                        addr = self.serial_encodage.extract_address(trame)
+
+                        if int(addr) == int(self.mon_adresse):
                             model = self.serial_encodage.decode(trame)
                             print(f"[+] Message décodé : {model}")
                             self.storage.save_data(model)
-            
+                        else:
+                            print(f"[-] Adresse {addr} ignorée.")
+                
                 time.sleep(0.1)
-
-            except KeyboardInterrupt:
-                self.stop()
-                break
+            except Exception as e:
+                print(f"ERREUR DANS LA BOUCLE : {e}")
+                time.sleep(1)
                 
     def stop(self):
         self.adapter_serial.close_connection()
