@@ -20,23 +20,35 @@ ROUNDS = 32
 #f4    4 oct.    Pression (P)
 #f5    4 oct.    UV (U)
 #fin    1 oct.    255
+
 def xtea_decrypt(v, k):
-    v0, v1 = v
-    delta = 0x9E3779B9
-    num_rounds = 32
-    # On calcule le sum final tel qu'il est après 32 rounds en C++
-    sum_val = (delta * num_rounds) & 0xFFFFFFFF
+    # On s'assure que les entrées sont strictement sur 32 bits
+    v0 = v[0] & 0xFFFFFFFF
+    v1 = v[1] & 0xFFFFFFFF
     
-    for _ in range(num_rounds):
-        # 1. On déchiffre v1 en premier (ordre inverse de l'encryption)
-        # Note : on applique le masque & 0xFFFFFFFF après CHAQUE opération sensible
-        v1 = (v1 - (((((v0 << 4) & 0xFFFFFFFF) ^ (v0 >> 5)) + v0) ^ (sum_val + k[(sum_val >> 11) & 3]))) & 0xFFFFFFFF
+    delta = 0x9E3779B9
+    # Le 'sum' initial après 32 itérations d'encryption
+    sum_val = (delta * 32) & 0xFFFFFFFF
+    
+    for _ in range(32):
+        # --- Déchiffrement de v1 ---
+        # term1 = (((v0 << 4) ^ (v0 >> 5)) + v0)
+        term1 = ((((v0 << 4) & 0xFFFFFFFF) ^ (v0 >> 5)) + v0) & 0xFFFFFFFF
+        # term2 = sum + k[(sum >> 11) & 3]
+        term2 = (sum_val + k[(sum_val >> 11) & 3]) & 0xFFFFFFFF
+        # v1 -= term1 ^ term2
+        v1 = (v1 - (term1 ^ term2)) & 0xFFFFFFFF
         
-        # 2. On décrémente sum
+        # --- Décrémentation de sum ---
         sum_val = (sum_val - delta) & 0xFFFFFFFF
         
-        # 3. On déchiffre v0
-        v0 = (v0 - (((((v1 << 4) & 0xFFFFFFFF) ^ (v1 >> 5)) + v1) ^ (sum_val + k[sum_val & 3]))) & 0xFFFFFFFF
+        # --- Déchiffrement de v0 ---
+        # term3 = (((v1 << 4) ^ (v1 >> 5)) + v1)
+        term3 = ((((v1 << 4) & 0xFFFFFFFF) ^ (v1 >> 5)) + v1) & 0xFFFFFFFF
+        # term4 = sum + k[sum & 3]
+        term4 = (sum_val + k[sum_val & 3]) & 0xFFFFFFFF
+        # v0 -= term3 ^ term4
+        v0 = (v0 - (term3 ^ term4)) & 0xFFFFFFFF
         
     return v0, v1
 
@@ -69,8 +81,10 @@ class BinaryEncodage(InterfaceEncodage):
         trame = MaTrame.from_buffer_copy(data)
         p = list(trame.payload) # Contient les 6 uint32 chiffrés
         
+        # === LE DIAGNOSTIC ULTIME ===
+        print(f"RAW PAYLOAD (Chiffré) : {p}")
+        
         decrypted_uints = []
-        # On traite les 3 blocs de 8 octets (2 uint32 par bloc)
         for i in range(0, 6, 2):
             v0, v1 = xtea_decrypt((p[i], p[i+1]), XTEA_KEY)
             decrypted_uints.append(v0)

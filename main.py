@@ -4,11 +4,13 @@ from implementations.storages import SQLiteStorage
 from adapter import SerialAdapter, UdpAdapter
 from implementations.storages.storage import FileStorage
 
+
+
 # 1. On choisit le protocole et le stockage
 serial_encodage = BinaryEncodage() 
 json_encodage = JsonEncodage()
-#stockage = SQLiteStorage("values.db")
-stockage = FileStorage("values.txt")
+stockage = SQLiteStorage("values.db")
+#stockage = FileStorage("values.txt")
 
 # 2. On configure l'adaptateur série en utilisant read_mode et length
 adapter_serial = SerialAdapter(
