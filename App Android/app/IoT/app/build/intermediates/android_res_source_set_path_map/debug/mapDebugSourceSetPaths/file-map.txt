@@ -1,0 +1,7 @@
+com.example.iot.app-pngs-0 /home/alexis/AndroidStudioProjects/IoT/app/build/generated/res/pngs/debug
+com.example.iot.app-updated_navigation_xml-1 /home/alexis/AndroidStudioProjects/IoT/app/build/generated/updated_navigation_xml/debug
+com.example.iot.app-packageDebugResources-2 /home/alexis/AndroidStudioProjects/IoT/app/build/intermediates/incremental/debug/packageDebugResources/merged.dir
+com.example.iot.app-packageDebugResources-3 /home/alexis/AndroidStudioProjects/IoT/app/build/intermediates/incremental/debug/packageDebugResources/stripped.dir
+com.example.iot.app-debug-4 /home/alexis/AndroidStudioProjects/IoT/app/build/intermediates/merged_res/debug/mergeDebugResources
+com.example.iot.app-debug-5 /home/alexis/AndroidStudioProjects/IoT/app/src/debug/res
+com.example.iot.app-main-6 /home/alexis/AndroidStudioProjects/IoT/app/src/main/res

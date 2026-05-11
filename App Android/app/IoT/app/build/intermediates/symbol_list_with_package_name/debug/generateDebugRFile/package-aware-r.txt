@@ -1,0 +1,26 @@
+com.example.iot
+color black
+color white
+drawable ic_launcher_background
+drawable ic_launcher_foreground
+id btnPlayer
+id btnRst
+id editIP
+id editPort
+id errorView
+id guideline3
+id humView
+id lightView
+id messageBox
+id presView
+id sendButton
+id tempView
+id uvView
+layout activity_main
+mipmap ic_launcher
+mipmap ic_launcher_round
+string app_name
+style Base_Theme_IoT
+style Theme_IoT
+xml backup_rules
+xml data_extraction_rules
