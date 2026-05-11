@@ -14,7 +14,7 @@ stockage = SQLiteStorage("values.db")
 
 # 2. On configure l'adaptateur série en utilisant read_mode et length
 adapter_serial = SerialAdapter(
-    port="COM6", 
+    port="COM7", 
     baudrate=115200, 
     #length=serial_encodage.framing_length
     length=1

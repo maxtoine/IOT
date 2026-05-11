@@ -7,7 +7,7 @@
 // Structure binaire de 25 octets pour serveur_2.py
 struct __attribute__((packed)) MaTrame {
     uint8_t  adresse; 
-    char     tag[4]; 
+    char     tag[5]; 
     uint32_t payload[6];
     uint8_t  fin;
 };
@@ -95,29 +95,35 @@ int main() {
     trame.fin = 255;// Octet de fin fixe pour valider la trame côté passerelle
 
     while(1) {
-        // 1. Lecture des capteurs 
-        uint32_t rawP; int32_t rawT; uint16_t rawH;
+        // 1. Vos variables sont bien à zéro
+        uint32_t rawP = 0; int32_t rawT = 0; uint16_t rawH = 0;        
         bme.sensor_read(&rawP, &rawT, &rawH);
         valT = (float)(bme.compensate_temperature(rawT) / 100.0);
         valP = (float)(bme.compensate_pressure(rawP) / 100.0);
         valH = (float)(bme.compensate_humidity(rawH) / 1024.0);
         
-        uint16_t c, ir; uint32_t lux;
+        uint16_t c = 0, ir = 0; uint32_t lux = 0;        
         tsl.sensor_read(&c, &ir, &lux);
         valL = (float)lux;
 
-        uint16_t uv;
+        uint16_t uv = 0;
         veml.sensor_read(&uv);
         valU = (float)uv;
 
-        float data_claire[6] = {valT, valL, valH, valP, valU, 0.0f}; // On ajoute un 6ème float à 0 pour compléter les 24 octets de payload (6*4 octets) et éviter les problèmes de formatage côté passerelle   
+        // 2. On prépare les données claires
+        float data_claire[6] = {valT, valL, valH, valP, valU, 0.0f}; 
 
-        uint32_t* p = (uint32_t*)data_claire; // On chiffre les données 2 par 2 (8 octets) pour sécuriser les informations sensibles avant de les envoyer à la passerelle
+        // 3. LA CORRECTION : On copie dans un tableau temporaire (buffer) pour le chiffrement
+        uint32_t payload_buffer[6]; 
+        memcpy(payload_buffer, data_claire, 24); // On copie les 24 octets de data_claire vers payload_buffer
+
+        // 4. On chiffre le buffer de travail (pas l'original !)
         for(int i=0; i<3; i++) {
-            xtea_encrypt(32, &p[i*2], key);
+            xtea_encrypt(32, &payload_buffer[i*2], key);
         }
 
-        memcpy(trame.payload, p, 24);
+        // 5. On place le buffer chiffré dans la trame finale
+        memcpy(trame.payload, payload_buffer, 24); 
         
         // Envoyer les informations à la passerelle via Radio 
         uBit.radio.datagram.send((uint8_t*)&trame, sizeof(MaTrame));

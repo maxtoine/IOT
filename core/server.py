@@ -60,11 +60,9 @@ class ServerIot:
                             self.storage.save_data(model)
                         else:
                             print(f"[-] Adresse {addr} ignorée.")
-                
                 time.sleep(0.1)
             except Exception as e:
                 print(f"ERREUR DANS LA BOUCLE : {e}")
-                time.sleep(1)
                 
     def stop(self):
         self.adapter_serial.close_connection()
