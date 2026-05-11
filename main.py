@@ -31,7 +31,7 @@ serveur = ServerIot(
     udp_adapter=udp_adapter, 
     serial_encodage=serial_encodage, 
     storage=stockage, 
-    adresse=42
+    adresse=00
 )
 
 

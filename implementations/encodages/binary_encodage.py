@@ -2,48 +2,28 @@ import ctypes
 import struct
 from core.model import Model
 from interface.interface_encodage import InterfaceEncodage
+from implementations.cryptage.cryptage import Cryptage
 import logging
 
 logger = logging.getLogger(__name__)
 
-# --- CONFIGURATION XTEA ---
-XTEA_KEY = [0xACE1ACE1, 0x12345678, 0xDEADBEEF, 0xBEEFFACE] 
-ROUNDS = 32
-
-def xtea_decrypt(v, k):
-    # Les entrées sont des entiers, on sécurise juste sur 32 bits
-    v0 = v[0] & 0xFFFFFFFF
-    v1 = v[1] & 0xFFFFFFFF
-    
-    delta = 0x9E3779B9
-    sum_val = (delta * 32) & 0xFFFFFFFF
-    
-    for _ in range(32):
-        term1 = ((((v0 << 4) & 0xFFFFFFFF) ^ (v0 >> 5)) + v0) & 0xFFFFFFFF
-        term2 = (sum_val + k[(sum_val >> 11) & 3]) & 0xFFFFFFFF
-        v1 = (v1 - (term1 ^ term2)) & 0xFFFFFFFF
-        
-        sum_val = (sum_val - delta) & 0xFFFFFFFF
-        
-        term3 = ((((v1 << 4) & 0xFFFFFFFF) ^ (v1 >> 5)) + v1) & 0xFFFFFFFF
-        term4 = (sum_val + k[sum_val & 3]) & 0xFFFFFFFF
-        v0 = (v0 - (term3 ^ term4)) & 0xFFFFFFFF
-        
-    return v0, v1
-
-# --- STRUCTURE DE 30 OCTETS ---
+# --- STRUCTURE DE 32 OCTETS ---
+# (1 octet dest + 1 octet source + 5 octets tag + 24 octets payload + 1 octet fin = 32)
 class MaTrame(ctypes.LittleEndianStructure):
     _pack_ = 1  
     _fields_ = [
-        ("adresse", ctypes.c_ubyte),        # 1 octet
-        ("tag",     ctypes.c_char * 5),     # 5 octets
-        # ÉTAPE 1 : On lit les données chiffrées comme 6 entiers (24 octets)
-        ("payload", ctypes.c_uint32 * 6),   
-        ("fin",     ctypes.c_ubyte)         # 1 octet
+        ('adresse_dest',   ctypes.c_ubyte),         # 1 octet
+        ("adresse_source", ctypes.c_ubyte),         # 1 octet
+        ("tag",            ctypes.c_char * 5),      # 5 octets
+        ("payload",        ctypes.c_uint32 * 6),    # 24 octets
+        ("fin",            ctypes.c_ubyte)          # 1 octet
     ]
 
 class BinaryEncodage(InterfaceEncodage):
-    framing_length = ctypes.sizeof(MaTrame) 
+    framing_length = ctypes.sizeof(MaTrame)
+    
+    def __init__(self):
+        self.cryptage = Cryptage()
 
     def extract_frames(self, buffer: bytes) -> tuple[list[bytes], bytes]:
         trames_completes = []
@@ -54,31 +34,60 @@ class BinaryEncodage(InterfaceEncodage):
         return trames_completes, buffer
 
     def extract_address(self, data: bytes) -> str:
-        return str(data[0])
+        # data[0] correspond à adresse_dest, data[1] à adresse_source
+        return str(data[0]) 
+    
+    def encode(self, data: Model) -> bytes:
+        # 1. On prépare nos 6 floats (dont le 0.0 de padding)
+        floats = [
+            data.temperature,
+            data.luminosity,
+            data.humidity,
+            data.pressure,
+            data.uv,
+            0.0
+        ]
+        
+        # 2. Conversion des floats en octets purs (24 octets)
+        raw_bytes = struct.pack('<6f', *floats)
+        
+        # 3. Chiffrement
+        encrypted_bytes = self.cryptage.encryptage(raw_bytes)
+        
+        # On copie directement la mémoire dans le payload de Ctypes
+        payload_array = (ctypes.c_uint32 * 6).from_buffer_copy(encrypted_bytes)
+        
+        formatted_tag = data.formats.encode('utf-8')[:5].ljust(5, b'\x00')
+        octet_fin = getattr(data, 'end', 255)
+        
+        # 4. Création de la trame finale
+        trame = MaTrame(
+            adresse_dest=int(getattr(data, 'adresse_dest', 0)),
+            adresse_source=int(data.address),
+            tag=formatted_tag,
+            payload=payload_array,
+            fin=int(octet_fin)
+        )
+        
+        return bytes(trame)
     
     def decode(self, data: bytes) -> Model:
         trame = MaTrame.from_buffer_copy(data)
-        p = list(trame.payload) # Contient les 6 entiers chiffrés
         
-        decrypted_uints = []
-        # On déchiffre les entiers 2 par 2
-        for i in range(0, 6, 2):
-            v0, v1 = xtea_decrypt((p[i], p[i+1]), XTEA_KEY)
-            decrypted_uints.append(v0)
-            decrypted_uints.append(v1)
+        # On extrait les 24 octets de la trame
+        payload_bytes = bytes(trame.payload) 
+        
+        # On déchiffre pour obtenir 24 octets clairs
+        decrypted_bytes = self.cryptage.decryptage(payload_bytes)
             
         # === ÉTAPE 2 : TRANSFORMATION EN FLOAT ===
-        # 1. On prend nos 6 entiers décryptés et on en fait un flux d'octets purs ('<6I')
-        raw_bytes = struct.pack('<6I', *decrypted_uints)
-        # 2. On indique à Python de lire ces octets purs comme étant 6 floats ('<6f')
-        floats = struct.unpack('<6f', raw_bytes)
-        
-        # Le résultat est garanti : "floats" contient maintenant de vrais nombres à virgule !
-        # floats[0]=T, floats[1]=L, floats[2]=H, floats[3]=P, floats[4]=U, floats[5]=0.0
+        # Les octets étant DÉJÀ purs, on les unpack directement !
+        floats = struct.unpack('<6f', decrypted_bytes)
         
         return Model(
-            address=str(trame.adresse),
-            formats=trame.tag.decode('utf-8', errors='ignore').strip(),
+            adresse_dest=str(trame.adresse_dest),
+            address=str(trame.adresse_source),
+            formats=trame.tag.decode('utf-8', errors='ignore').strip().strip('\x00'),
             temperature=floats[0],
             luminosity=floats[1],
             humidity=floats[2],
