@@ -16,8 +16,6 @@ stockage = SQLiteStorage("values.db")
 adapter_serial = SerialAdapter(
     port="COM7", 
     baudrate=115200, 
-    #length=serial_encodage.framing_length
-    length=1
 )
 
 udp_adapter = UdpAdapter(

@@ -62,7 +62,7 @@ class BinaryEncodage(InterfaceEncodage):
         
         # 4. Création de la trame finale
         trame = MaTrame(
-            adresse_dest=int(getattr(data, 'adresse_dest', 0)),
+            adresse_dest=int(data.adresse_dest),
             adresse_source=int(data.address),
             tag=formatted_tag,
             payload=payload_array,

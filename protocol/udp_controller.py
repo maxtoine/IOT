@@ -62,8 +62,8 @@ class UdpController:
             return {"status": "error", "message": "Le système matériel n'est pas connecté."}
         
         # L'application Android place le texte dans la variable "message"
-        nouvel_ordre = data.get("message", "").strip().upper() # On force en majuscule au cas où
-        
+        nouvel_ordre = data.get("message").strip().upper() # On force en majuscule au cas où
+        adress_capteur = data.get("address") 
         if not nouvel_ordre:
             return {"status": "error", "message": "L'ordre envoyé est vide."}
 
@@ -72,9 +72,10 @@ class UdpController:
 
         # MODIF 4 : ENVOI TEXTE BRUT POUR LA PASSERELLE
         # On n'encode PAS en binaire 30 octets. La passerelle attend juste un String avec un \n
-        commande_texte = f"{nouvel_ordre}\n"
+        commande_model = Model(adresse_dest= adress_capteur, address=self.mon_adresse, formats=nouvel_ordre, end=255)
         
+        commande_encoder = self.serial_encodage.encode(commande_model)
         # On convertit le string en bytes et on l'envoie sur l'UART
-        self.serial_adapter.send_raw(commande_texte.encode('utf-8'))
+        self.serial_adapter.send_raw(commande_encoder)
         
         return {"status": "success", "message": f"Ordre '{nouvel_ordre}' transmis au capteur."}

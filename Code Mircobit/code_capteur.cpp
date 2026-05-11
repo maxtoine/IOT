@@ -6,7 +6,8 @@
 
 // Structure binaire de 25 octets pour serveur_2.py
 struct __attribute__((packed)) MaTrame {
-    uint8_t  adresse; 
+    uint8_t  adresse_dest;
+    uint8_t  adresse_source; 
     char     tag[5]; 
     uint32_t payload[6];
     uint8_t  fin;
@@ -90,7 +91,8 @@ int main() {
     veml6070 veml(&uBit, &i2c);
 
     MaTrame trame;
-    trame.adresse = 42; // Identifiant du bureau 
+    trame.adresse_dest = 00; // Identifiant du bureau 
+    trame.adresse_source = 42; // Identifiant du micro:bit
     memcpy(trame.tag, (char*)currentOrder.toCharArray(), 5); // On copie les 5 caractères de l'ordre dans le champ tag (ex: "TLHPU")
     trame.fin = 255;// Octet de fin fixe pour valider la trame côté passerelle
 
