@@ -60,7 +60,6 @@
         "description": "",
         "id": 1,
         "links": [],
-        "uid": "your-unique-id-here",
         "title": "Température (°C)",
         "vizConfig": {
           "group": "timeseries",

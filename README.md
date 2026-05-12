@@ -94,3 +94,25 @@ Pour ajouter un nouveau stockage :
 - Le serveur conserve le buffer de lecture tant que les heures complètes ne sont pas disponibles.
 - Seules les trames destinées à `mon_adresse` ou à l'adresse `0` sont traitées.
 - Pour arrêter proprement le serveur, utilisez `Ctrl+C`.
+
+## Grafana
+### 1. Lancer le docker depuis la racine du projet :
+
+```bash
+sudo docker compose up -d
+```
+Grafana est ensuite accessible sur `http://localhost:3000` (login : `admin` / `admin`).
+
+### 2. Configurer la datasource SQLite
+
+1. Allez dans **Connections** → **Data sources** → **Add new data source**
+2. Cherchez **SQLite** et sélectionnez-le
+3. Dans le champ **Path**, entrez : `/var/lib/grafana/values.db`
+4. Cliquez **Save & Test**
+5. Notez l'**uid** de la datasource dans l'URL (regardez l'URL, elle contient quelque chose comme /datasources/edit/cflbl4vhq8000c, ce cflbl4vhq8000c est l'uid)
+
+### 3. Importer le dashboard
+
+1. Ouvrez le fichier `grafana_dashboard.json` et remplacez toutes les occurrences de `cflbl4vhq8000c` par votre propre uid.
+2. Dans Grafana, allez dans **Dashboards** → **Import**
+3. Uploadez le fichier `grafana_dashboard.json`
