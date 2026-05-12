@@ -1,11 +1,9 @@
 import serial
 
 class SerialAdapter:
-    def __init__(self, port: str, baudrate: int, read_mode: str = "line", length: int = 0):
+    def __init__(self, port: str, baudrate: int):
         self.port = port
         self.baudrate = baudrate
-        self.read_mode = read_mode
-        self.length = length
         self._serial = serial.Serial()
         self._init_uart()
         

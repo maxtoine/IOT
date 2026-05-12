@@ -156,10 +156,10 @@ class SQLiteStorage(InterfaceSave):
         return Model(
             address=row["address"],
             formats=row["formats"],
-            temperature=str(row["temperature"]),
-            luminosity=str(row["luminosity"]),
-            humidity=str(row["humidity"]),
-            pressure=str(row["pressure"]),
-            uv=str(row["uv"]),
-            end=str(row["end"]),
+            temperature=float(row["temperature"]), # On force bien en float !
+            luminosity=float(row["luminosity"]),
+            humidity=float(row["humidity"]),
+            pressure=float(row["pressure"]),
+            uv=float(row["uv"]),
+            end=int(row["end"]), # end est un entier (255)
         )

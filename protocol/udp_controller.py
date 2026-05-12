@@ -16,7 +16,6 @@ class UdpController:
         """Point d'entrée appelé par l'UdpAdapter."""
         print(f"[Protocole UDP] Requête reçue : {data_in}")
         
-        # On extrait la commande principale
         method = data_in.get("method")
         
         # --- ROUTAGE DES COMMANDES ---
@@ -24,8 +23,8 @@ class UdpController:
             case "poll":
                 return self._handle_poll(data_in)
                 
-            case "formats":
-                return self._handle_formats(data_in)
+            case "message": # MODIF 3 : On écoute la méthode "message" envoyée par Android
+                return self._handle_message(data_in)
                  
             case _:
                 return {"status": "error", "message": f"Méthode '{method}' inconnue"}
@@ -36,53 +35,47 @@ class UdpController:
         """Gère la demande de lecture en base de données."""
         address_demandee = data.get("address")
         
-        if address_demandee is None:
-             return {"status": "error", "message": "Il manque la clé 'address' dans la requête."}
-
-        list_data = self.storage.search_data(address_demandee)
+        # MODIF SQLITE : On utilise ta fonction get_last_n qui gère tout (même si l'adresse est None !)
+        list_data = self.storage.get_last_n(1, address_demandee)
         
         if not list_data:
-            return {"status": "error", "message": f"Aucune donnée pour l'adresse {address_demandee}"}
+            return {"status": "error", "message": "Aucune donnée disponible sur le serveur."}
 
-        data_last = list_data[0]
+        # get_last_n(1) renvoie une liste d'1 seul élément, on prend donc l'index 0
+        data_last = list_data[0] 
         
-        # On construit le dictionnaire de réponse
+        # ALIGNEMENT DES CLÉS AVEC ANDROID ET FORMATTAGE
         return {
             "status": "success",
-            "address": data_last.address,
+            "address": data_last.address, 
             "formats": data_last.formats,
-            "temperature": data_last.temperature,
-            "humidity": data_last.humidity,
-            "luminosity": data_last.luminosity,
-            "pressure": data_last.pressure,
-            "uv": data_last.uv,
+            "temperature": f"{data_last.temperature:.2f}",
+            "humidity": f"{data_last.humidity:.2f}",
+            "light": f"{data_last.luminosity:.2f}", 
+            "pressure": f"{data_last.pressure:.2f}",
+            "uv": f"{data_last.uv:.2f}",
         }
 
-    def _handle_formats(self, data: dict) -> dict:
-        """Gère la demande d'action matérielle (via l'UART)."""
-        if not self.serial_adapter or not self.serial_encodage:
+    def _handle_message(self, data: dict) -> dict:
+        """Gère la demande d'action matérielle envoyée par l'EditText d'Android."""
+        if not self.serial_adapter:
             return {"status": "error", "message": "Le système matériel n'est pas connecté."}
         
-        format = data.get("formats", "")
-        if format and not set(format).issubset(self.ALLOWED_CHARS) :
+        # L'application Android place le texte dans la variable "message"
+        nouvel_ordre = data.get("message").strip().upper() # On force en majuscule au cas où
+        adress_capteur = data.get("address") 
+        if not nouvel_ordre:
+            return {"status": "error", "message": "L'ordre envoyé est vide."}
+
+        if not set(nouvel_ordre).issubset(self.ALLOWED_CHARS) :
             return {"status": "error", "message": f"Formats invalides. Seuls les caractères {self.ALLOWED_CHARS} sont autorisés."}
 
-        if len(format) > 5:
-            return {"status": "error", "message": "Le champ 'formats' doit contenir au moins 5 caractères."}
-
-        # 1. On crée le Model à partir de la demande Android
-        model_a_envoyer = Model(
-            address_destination=data.get("address", 0),
-            address=self.mon_adresse,
-            formats=format, # Un tag fixe de 5 caractères pour les commandes
-            temperature=0.0, # Valeur envoyée par l'Android
-            luminosity=0.0, humidity=0.0, pressure=0.0, uv=0.0, end=255
-        )
-
-        # 2. On transforme le Model en 28 octets via ton BinaryEncodage
-        trame_binaire = self.serial_encodage.encode(model_a_envoyer)
-
-        # 3. On envoie sur le port Série
-        self.serial_adapter.send_raw(trame_binaire)
+        # MODIF 4 : ENVOI TEXTE BRUT POUR LA PASSERELLE
+        # On n'encode PAS en binaire 30 octets. La passerelle attend juste un String avec un \n
+        commande_model = Model(adresse_dest= adress_capteur, address=self.mon_adresse, formats=nouvel_ordre, end=255)
         
-        return {"status": "success", "message": "Ordre binaire transmis au matériel."}
+        commande_encoder = self.serial_encodage.encode(commande_model)
+        # On convertit le string en bytes et on l'envoie sur l'UART
+        self.serial_adapter.send_raw(commande_encoder)
+        
+        return {"status": "success", "message": f"Ordre '{nouvel_ordre}' transmis au capteur."}

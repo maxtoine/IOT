@@ -1,94 +1,97 @@
 import ctypes
+import struct
 from core.model import Model
 from interface.interface_encodage import InterfaceEncodage
+from implementations.cryptage.cryptage import Cryptage
 import logging
 
 logger = logging.getLogger(__name__)
 
-#Champ    Taille    Contenu fixe
-#adresse    1 oct.    ID (42)
-#tag    3 oct.    "TLHPU"
-#f1    4 oct.    Température (T)
-#f2    4 oct.    Luminosité (L)
-#f3    4 oct.    Humidité (H)
-#f4    4 oct.    Pression (P)
-#f5    4 oct.    UV (U)
-#fin    1 oct.    255
-
+# --- STRUCTURE DE 32 OCTETS ---
+# (1 octet dest + 1 octet source + 5 octets tag + 24 octets payload + 1 octet fin = 32)
 class MaTrame(ctypes.LittleEndianStructure):
     _pack_ = 1  
     _fields_ = [
-        ("address_destination", ctypes.c_ubyte), # 1 octet
-        ("address", ctypes.c_ubyte),
-        ("tag",     ctypes.c_char * 5), # 5 caractères pour le tag (ex: "T", "L", "H", "P", "U")
-        ("f1",      ctypes.c_float), # T
-        ("f2",      ctypes.c_float), # L
-        ("f3",      ctypes.c_float), # H
-        ("f4",      ctypes.c_float), # P
-        ("f5",      ctypes.c_float), # U
-        ("fin",     ctypes.c_ubyte)
+        ('adresse_dest',   ctypes.c_ubyte),         # 1 octet
+        ("adresse_source", ctypes.c_ubyte),         # 1 octet
+        ("tag",            ctypes.c_char * 5),      # 5 octets
+        ("payload",        ctypes.c_uint32 * 6),    # 24 octets
+        ("fin",            ctypes.c_ubyte)          # 1 octet
     ]
 
 class BinaryEncodage(InterfaceEncodage):
-  
-    framing_length = ctypes.sizeof(MaTrame) # 26 octets
+    framing_length = ctypes.sizeof(MaTrame)
+    
+    def __init__(self):
+        self.cryptage = Cryptage()
 
     def extract_frames(self, buffer: bytes) -> tuple[list[bytes], bytes]:
-        """
-        Extrait toutes les trames complètes du buffer.
-        Retourne un tuple : (liste des trames complètes, le reste du buffer incomplet)
-        """
-        try:
-            return self._extract_frames_impl(buffer)
-        except Exception as e:
-            logger.error(f"Erreur d'extraction des trames: {e}")
-            return [], buffer # En cas d'erreur, on rend le buffer pour ne rien perdre
-        
-    def _extract_frames_impl(self, buffer: bytes) -> tuple[list[bytes], bytes]:
         trames_completes = []
-        taille_trame = self.framing_length # 26 octets
-        
-        # On boucle tant qu'on a assez d'octets pour faire au moins une trame complète
-        while len(buffer) >= taille_trame:
-            # On extrait les 26 premiers octets exacts
-            trame = buffer[:taille_trame]
-            trames_completes.append(trame)
-            
-            # On retire ces 26 octets du buffer pour garder ce qui reste
-            buffer = buffer[taille_trame:]
-            
+        taille = self.framing_length
+        while len(buffer) >= taille:
+            trames_completes.append(buffer[:taille])
+            buffer = buffer[taille:]
         return trames_completes, buffer
-       
+
     def extract_address(self, data: bytes) -> str:
-        # Ultra rapide : l'adresse est le TOUT PREMIER octet (index 0) !
-        if len(data) < 1:
-            raise ValueError("Données insuffisantes pour extraire l'adresse")
-        return data[0]
+        # data[0] correspond à adresse_dest, data[1] à adresse_source
+        return str(data[0]) 
     
     def encode(self, data: Model) -> bytes:
-        trame = MaTrame()
-        trame.address_destination = int(data.address_destination)
-        trame.address = int(data.address)
-        trame.tag = data.formats.encode('utf-8')
-        trame.f1      = data.temperature
-        trame.f2      = data.luminosity
-        trame.f3      = data.humidity
-        trame.f4      = data.pressure
-        trame.f5      = data.uv
-        trame.fin = int(data.end)
+        # 1. On prépare nos 6 floats (dont le 0.0 de padding)
+        floats = [
+            data.temperature,
+            data.luminosity,
+            data.humidity,
+            data.pressure,
+            data.uv,
+            0.0
+        ]
+        
+        # 2. Conversion des floats en octets purs (24 octets)
+        raw_bytes = struct.pack('<6f', *floats)
+        
+        # 3. Chiffrement
+        encrypted_bytes = self.cryptage.encryptage(raw_bytes)
+        
+        # On copie directement la mémoire dans le payload de Ctypes
+        payload_array = (ctypes.c_uint32 * 6).from_buffer_copy(encrypted_bytes)
+        
+        formatted_tag = data.formats.encode('utf-8')[:5].ljust(5, b'\x00')
+        octet_fin = getattr(data, 'end', 255)
+        
+        # 4. Création de la trame finale
+        trame = MaTrame(
+            adresse_dest=int(data.adresse_dest),
+            adresse_source=int(data.address),
+            tag=formatted_tag,
+            payload=payload_array,
+            fin=int(octet_fin)
+        )
+        
         return bytes(trame)
-
+    
     def decode(self, data: bytes) -> Model:
         trame = MaTrame.from_buffer_copy(data)
-    
+        
+        # On extrait les 24 octets de la trame
+        payload_bytes = bytes(trame.payload) 
+        
+        # On déchiffre pour obtenir 24 octets clairs
+        decrypted_bytes = self.cryptage.decryptage(payload_bytes)
+            
+        # === ÉTAPE 2 : TRANSFORMATION EN FLOAT ===
+        # Les octets étant DÉJÀ purs, on les unpack directement !
+        floats = struct.unpack('<6f', decrypted_bytes)
+        
         return Model(
-            address_destination=trame.address_destination,
-            address=trame.address,
-            formats=trame.tag.decode('utf-8'),
-            temperature=trame.f1,
-            luminosity=trame.f2,
-            humidity=trame.f3,
-            pressure=trame.f4,
-            uv=trame.f5,
+            adresse_dest=str(trame.adresse_dest),
+            address=str(trame.adresse_source),
+            formats=trame.tag.decode('utf-8', errors='ignore').strip().strip('\x00'),
+            temperature=floats[0],
+            luminosity=floats[1],
+            humidity=floats[2],
+            pressure=floats[3],
+            uv=floats[4],
             end=trame.fin
         )

@@ -2,7 +2,7 @@
 
 ## Description
 
-Ce projet Python implémente un serveur IoT léger capable de lire des trames série, de décoder des messages selon différents formats et de stocker les données dans une base SQLite.
+Ce projet implémente un système IoT complet allant de l'acquisition matérielle à la visualisation distante. Il comprend un réseau de capteurs Micro:bit, un serveur Python léger capable de lire des trames série, de décoder des messages chiffrés et de stocker les données dans une base SQLite, ainsi qu'une application Android et un tableau de bord Grafana.
 
 Le serveur est construit avec une architecture modulaire :
 - `adapter/` : gestion du port série
@@ -15,9 +15,12 @@ Le serveur est construit avec une architecture modulaire :
 
 - Lecture de données depuis un port série
 - Découpage et extraction de trames complètes
-- Décodage binaire (`BinaryEncodage`) et texte (`TextEncodage`)
+- Décodage binaire avec déchiffrement XTEA et texte
 - Filtrage par adresse de destination
 - Sauvegarde automatique dans une base SQLite
+- Serveur UDP asynchrone répondant aux requêtes JSON d'une application Android.
+- Contrôle bidirectionnel : L'application mobile peut modifier l'affichage de l'écran OLED du capteur en envoyant un nouvel ordre
+- Visualisation des donnée sur un dashboard Grafana    
 
 ## Installation
 
