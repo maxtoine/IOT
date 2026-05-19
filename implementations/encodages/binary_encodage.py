@@ -15,7 +15,7 @@ class MaTrame(ctypes.LittleEndianStructure):
         ('adresse_dest',   ctypes.c_ubyte),         # 1 octet
         ("adresse_source", ctypes.c_ubyte),         # 1 octet
         ("tag",            ctypes.c_char * 5),      # 5 octets
-        ("payload",        ctypes.c_uint32 * 6),    # 24 octets
+        ("payload",        ctypes.c_uint32 * 6),    # 24 octets (5 données de capteurs + 1 de padding)
         ("fin",            ctypes.c_ubyte)          # 1 octet
     ]
 

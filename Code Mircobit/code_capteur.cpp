@@ -6,11 +6,11 @@
 
 // Structure binaire de 25 octets pour serveur_2.py
 struct __attribute__((packed)) MaTrame {
-    uint8_t  adresse_dest;
-    uint8_t  adresse_source; 
-    char     tag[5]; 
-    uint32_t payload[6];
-    uint8_t  fin;
+    uint8_t  adresse_dest; // Identifiant du serveur
+    uint8_t  adresse_source; // Identifiant du micro:bit
+    char     tag[5]; // 5 caractères pour indiquer l'ordre d'affichage (ex: "TLHPU")
+    uint32_t payload[6];// 6 valeurs de capteurs (T, L, H, P, U + 1 pour le padding)
+    uint8_t  fin; // Caractère de fin de trame
 };
 MicroBit uBit;
 MicroBitI2C i2c(MICROBIT_PIN_P20, MICROBIT_PIN_P19);
@@ -24,6 +24,7 @@ float valT = 0, valL = 0, valH = 0, valP = 0, valU = 0;
 uint32_t key[4] = {0xACE1ACE1, 0x12345678, 0xDEADBEEF, 0xBEEFFACE};
 
 // Fonction de chiffrement XTEA (32 rounds) pour sécuriser les données envoyées à la passerelle
+//
 void xtea_encrypt(uint32_t num_rounds, uint32_t v[2], uint32_t const k[4]) {
     uint32_t v0 = v[0], v1 = v[1], sum = 0, delta = 0x9E3779B9;
     for (uint32_t i = 0; i < num_rounds; i++) {
@@ -97,9 +98,11 @@ int main() {
     trame.fin = 255;// Octet de fin fixe pour valider la trame côté passerelle
 
     while(1) {
-        // 1. Vos variables sont bien à zéro
+        // 1. initialisation des variables pour les données capteurs
         uint32_t rawP = 0; int32_t rawT = 0; uint16_t rawH = 0;        
         bme.sensor_read(&rawP, &rawT, &rawH);
+
+        // Conversion des données brutes en valeurs exploitables (float) selon les formules de compensation du BME280
         valT = (float)(bme.compensate_temperature(rawT) / 100.0);
         valP = (float)(bme.compensate_pressure(rawP) / 100.0);
         valH = (float)(bme.compensate_humidity(rawH) / 1024.0);
@@ -115,11 +118,11 @@ int main() {
         // 2. On prépare les données claires
         float data_claire[6] = {valT, valL, valH, valP, valU, 0.0f}; 
 
-        // 3. LA CORRECTION : On copie dans un tableau temporaire (buffer) pour le chiffrement
+        // 3.  On copie dans un tableau temporaire (buffer) pour le chiffrement
         uint32_t payload_buffer[6]; 
-        memcpy(payload_buffer, data_claire, 24); // On copie les 24 octets de data_claire vers payload_buffer
+        memcpy(payload_buffer, data_claire, 24);
 
-        // 4. On chiffre le buffer de travail (pas l'original !)
+        // 4. On chiffre le buffer de travail en 3 blocs de 8 octets (2 uint32_t) avec XTEA
         for(int i=0; i<3; i++) {
             xtea_encrypt(32, &payload_buffer[i*2], key);
         }

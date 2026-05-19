@@ -3,9 +3,11 @@ from interface.interface_cryptage import InterfaceCryptage
 
 class Cryptage(InterfaceCryptage):
     
+    ## Clé de 128 bits (4 entiers de 32 bits)
     XTEA_KEY = [0xACE1ACE1, 0x12345678, 0xDEADBEEF, 0xBEEFFACE] 
     ROUNDS = 32
     
+    ##  déchiffrement de la trame reçue du micro:bit vers le serveur ( partie mathematiques du XTEA)
     def _xtea_decrypt_block(self, v0: int, v1: int, k: list) -> tuple:
         """Déchiffre un bloc de 64 bits (deux entiers de 32 bits)"""
         v0 = v0 & 0xFFFFFFFF
@@ -25,7 +27,9 @@ class Cryptage(InterfaceCryptage):
             v0 = (v0 - (term3 ^ term4)) & 0xFFFFFFFF
             
         return v0, v1
+    
 
+    ##  chiffrement de la trame vers le micro:bit ( partie mathematiques du XTEA)
     def _xtea_encrypt_block(self, v0: int, v1: int, k: list) -> tuple:
         """Chiffre un bloc de 64 bits (deux entiers de 32 bits)"""
         v0 = v0 & 0xFFFFFFFF
@@ -46,6 +50,7 @@ class Cryptage(InterfaceCryptage):
             
         return v0, v1
 
+    ## fonction qui appelle le chiffrement pour les données à envoyer au micro:bit 
     def decryptage(self, data: bytes) -> bytes:
         # 1. On détermine combien d'entiers de 32 bits (4 octets) il y a dans les bytes
         num_ints = len(data) // 4
@@ -63,6 +68,7 @@ class Cryptage(InterfaceCryptage):
         # 4. On retransforme les entiers déchiffrés en bytes purs
         return struct.pack(fmt, *decrypted_uints)
 
+    ## fonction qui appelle le chiffrement pour les données à envoyer au micro:bit
     def encryptage(self, data: bytes) -> bytes:
         # Même logique que le déchiffrement, mais dans l'autre sens
         num_ints = len(data) // 4

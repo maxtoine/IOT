@@ -42,7 +42,7 @@ int main() {
                 else {
                     // Si ce n'est pas 255, la trame est décalée ou corrompue.
                     // On l'ignore simplement pour éviter d'envoyer des déchets à la radio.
-                    // (Optionnel : on pourrait vider le reste du buffer série ici)
+                  
                 }
             }
         }
