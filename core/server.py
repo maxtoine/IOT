@@ -46,6 +46,12 @@ class ServerIot:
             mon_adresse=self.mon_adresse
         )
         
+        self.serial_controller = SerialController(
+            storage=self.storage,
+            serial_adapter=self.adapter_serial,
+            serial_encodage=self.serial_encodage,
+            mon_adresse=self.mon_adresse
+        )
         self.udp_adapter.set_logic_callback(self.udp_controller.process_request)
 
     def start(self):
@@ -97,7 +103,7 @@ class ServerIot:
                             # Décode la trame pour obtenir un modèle de données exploitable
                             model = self.serial_encodage.decode(trame)
                             print(f"[+] Message décodé : {model}")
-                            self.storage.save_data(model)
+                            self.serial_controller.process_request(model)
             
                 time.sleep(0.1)
             except Exception as e:
