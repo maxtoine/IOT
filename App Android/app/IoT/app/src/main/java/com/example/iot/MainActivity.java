@@ -21,10 +21,6 @@ import org.json.JSONObject;
 
 public class MainActivity extends AppCompatActivity {
 
-    // À adapter avec l’IP/port de ton serveur UDP
-    private static final String DEST_IP = "192.168.253.217";
-    private static final int DEST_PORT = 10000;
-
     private EditText editIP;
     private EditText editPort;
     private EditText messageBox;
@@ -62,6 +58,7 @@ public class MainActivity extends AppCompatActivity {
         btnRst = findViewById(R.id.btnRst);
         btnPlayer = findViewById(R.id.btnPlayer);
 
+        // Sends the message in the text box via UDP when the "send" button is pressed
         btnRst.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -82,6 +79,7 @@ public class MainActivity extends AppCompatActivity {
         messageBox = findViewById(R.id.messageBox);
         sendButton = findViewById(R.id.sendButton);
 
+        // Sends the content of the text box via UDP when the button is pressed
         sendButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -89,10 +87,10 @@ public class MainActivity extends AppCompatActivity {
                 final String message = messageBox.getText().toString().trim();
 
                 if (message.isEmpty()) {
-                    return; // évite d’envoyer du vide
+                    return; // Does not send empty messages
                 }
 
-                // Thread de fond obligatoire pour le réseau
+                // Thread to send the message via UDP
                 new Thread(new Runnable() {
                     @Override
                     public void run() {
@@ -113,7 +111,8 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-
+        // Choose the sensor depending of the switch position
+        // Able to choose between two sensors thanks to their addresses
         btnPlayer.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -130,21 +129,17 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        SensorManager manager = (SensorManager) getSystemService(SENSOR_SERVICE);
-        Sensor sensor = manager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
-        if (sensor != null) {
-            manager.registerListener(listener, sensor, SensorManager.SENSOR_DELAY_UI);
-        }
     }
     @Override
     protected void onPause() {
         super.onPause();
-        SensorManager manager = (SensorManager) getSystemService(SENSOR_SERVICE);
         manager.unregisterListener(listener);
     }
 
-    // Thread permettant d'envoyer des données structurées en JSON en UDP
+    // Function that sends a JSON message via UDP
     private void sendUdp(String message) throws JSONException {
+
+        // Gets the ip address and port for the server from the corresponding text boxes
         editIP = findViewById(R.id.editIP);
         editPort = findViewById(R.id.editPort);
         String IP = editIP.getText().toString().trim();
@@ -153,11 +148,13 @@ public class MainActivity extends AppCompatActivity {
 
         JSONObject obj = new JSONObject();
 
+        // Selects the sensor address
         if(sensorId == 1)
             obj.put("address", address1);
         else
             obj.put("address", address2);
 
+        // Sends a poll request or the message if any
         if(message != null){
             obj.put("method", "message");
             obj.put("message", message);
@@ -184,8 +181,8 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    // Thread permettant de recevoir des données JSON en UDP
-    // Affiche les données conformément au type de données récupérées
+    // Thread that listens for received UDP messages
+    // Parses the message in JSON
     private void startUdpReceiver() {
         new Thread(new Runnable() {
             @Override
@@ -208,6 +205,7 @@ public class MainActivity extends AppCompatActivity {
                                 packet.getLength()
                         );
 
+                        // Tries to parse message as JSON
                         try {
                             JSONObject obj = new JSONObject(received);
                             if(obj.has("status"))
@@ -222,10 +220,12 @@ public class MainActivity extends AppCompatActivity {
                             }
                             else if (status.equals("success")) {
                                 if(obj.has("address")){
+                                    // If it is the first time a message is received with address, memorize it
                                     if(sensorId == 1 && address1 == null)
                                         address1 = obj.getInt("address");
                                     else if(sensorId == 2 && address2 == null)
                                         address2 = obj.getInt("address");
+                                    // Else get the values from the correct address
                                     else if((sensorId == 1 && obj.getInt("address") == address1) || (sensorId == 2 && obj.getInt("address") == address2)){
                                         error = "";
                                         if(obj.has("temperature"))
@@ -240,6 +240,7 @@ public class MainActivity extends AppCompatActivity {
                                             uv = obj.getString("uv");
                                     }
                                     else{
+                                        // Display the address for messages from other adrresses
                                         error = "Received message from address " + obj.getInt("address");
                                     }
                                 }
@@ -247,12 +248,13 @@ public class MainActivity extends AppCompatActivity {
                                 error = "Message status not found or not supported";
                             }
 
+                        // Shows error if unable to parse the message as a JSON
                         } catch (Exception e) {
                             error = "Error parsing JSON";
                         }
 
 
-
+                        // Selects the corresponding field views for displaying sensor values
                         errorView = findViewById(R.id.errorView);
                         tempView = findViewById(R.id.tempView);
                         humView = findViewById(R.id.humView);
@@ -260,6 +262,7 @@ public class MainActivity extends AppCompatActivity {
                         presView = findViewById(R.id.presView);
                         uvView = findViewById(R.id.uvView);
 
+                        // Displays the sensor values with field name and corresponding units
                         runOnUiThread(new Runnable() {
                             @Override
                             public void run() {

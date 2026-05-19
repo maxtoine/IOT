@@ -5,6 +5,8 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
+    <!-- Defines the layout of the app like buttons and textboxes -->
+
     <Button
         android:id="@+id/btnRst"
         android:layout_width="wrap_content"
@@ -34,6 +36,7 @@
         android:layout_marginEnd="13dp"
         android:ems="10"
         android:inputType="number"
+        <!-- Valeur par défaut pouvant être changée -->
         android:text="10000"
         app:layout_constraintBaseline_toBaselineOf="@+id/editIP"
         app:layout_constraintEnd_toEndOf="parent"
@@ -48,6 +51,7 @@
         android:layout_marginEnd="13dp"
         android:ems="10"
         android:inputType="phone"
+        <!-- Valeur par défaut pouvant être changée -->
         android:text="10.42.0.1"
         app:layout_constraintEnd_toStartOf="@+id/editPort"
         app:layout_constraintStart_toStartOf="parent"
