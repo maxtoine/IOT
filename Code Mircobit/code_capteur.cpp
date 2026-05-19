@@ -16,6 +16,9 @@ MicroBit uBit;
 MicroBitI2C i2c(MICROBIT_PIN_P20, MICROBIT_PIN_P19);
 MicroBitPin P0(MICROBIT_ID_IO_P0, MICROBIT_PIN_P0, PIN_CAPABILITY_DIGITAL_OUT);
 
+int adresse_passerelle = 00; // Identifiant de la passerelle (pour le micro:bit)
+int adresse_microbit = 42; // Identifiant du micro:bit (pour la passerelle)
+
 // Variables globales pour l'affichage dynamique 
 ManagedString currentOrder = "TLHPU"; 
 float valT = 0, valL = 0, valH = 0, valP = 0, valU = 0;
@@ -36,12 +39,28 @@ void xtea_encrypt(uint32_t num_rounds, uint32_t v[2], uint32_t const k[4]) {
 }
 
 // Écouter la passerelle pour la configuration d'affichage 
+// Écouter la passerelle pour la configuration d'affichage 
 void onConfigurationReceived(MicroBitEvent) {
-    ManagedString s = uBit.radio.datagram.recv();
-    if (s.length() > 0) {
-        currentOrder = s; // Mise à jour de l'ordre (ex: "LTH")
+    PacketBuffer buffer = uBit.radio.datagram.recv();
+    
+    // On s'assure que le paquet reçu a bien la taille exacte de notre structure (25 octets)
+    if (buffer.length() == sizeof(MaTrame)) {
+        
+        // On "cast" (plaque) les données brutes reçues directement dans le format MaTrame
+        MaTrame* trameRecue = (MaTrame*)buffer.getBytes();
+        
+        // On vérifie si l'identifiant de destination correspond à notre micro:bit (42)
+        if (trameRecue->adresse_dest == adresse_microbit) {
+            
+            // Si c'est pour nous, on extrait les 5 caractères du tag
+            char nouveauTag[6] = {0}; // Tableau de 6 pour inclure la fin de chaîne '\0' obligatoire pour ManagedString
+            memcpy(nouveauTag, trameRecue->tag, 5);
+            
+            currentOrder = ManagedString(nouveauTag); // Mise à jour de l'ordre (ex: "LTHPU")
+        }
     }
 }
+
 ManagedString formaterCapteur(char c) { // Formate la valeur du capteur selon le type demandé (T, L, H, P, U)
     if (c == 'T') return "T:" + ManagedString((int)valT) + "C";
     if (c == 'L') return "L:" + ManagedString((int)valL) + "lx";
@@ -92,8 +111,8 @@ int main() {
     veml6070 veml(&uBit, &i2c);
 
     MaTrame trame;
-    trame.adresse_dest = 00; // Identifiant du bureau 
-    trame.adresse_source = 42; // Identifiant du micro:bit
+    trame.adresse_dest = adresse_passerelle; // Identifiant de la passerelle
+    trame.adresse_source = adresse_microbit; // Identifiant du micro:bit
     memcpy(trame.tag, (char*)currentOrder.toCharArray(), 5); // On copie les 5 caractères de l'ordre dans le champ tag (ex: "TLHPU")
     trame.fin = 255;// Octet de fin fixe pour valider la trame côté passerelle
 
